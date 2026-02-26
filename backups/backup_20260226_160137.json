@@ -3,9 +3,7 @@
         "Test neu": {
             "name": "Test neu",
             "participants": {
-                "Dennis": {
-                    "password": "Admin123"
-                },
+                "Dennis": "Kanu2024",
                 "Christian": "Start1234"
             },
             "info": {
