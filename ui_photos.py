@@ -4,79 +4,93 @@ from storage import save_db
 from io import BytesIO
 import base64
 from PIL import Image
-import uuid # FEHLTE: Hilft beim Erzeugen sicherer IDs
+import uuid
 
 def render_photos(data, trip_name):
-    # Sicherstellen, dass die Trip-Daten korrekt geladen werden
     if "trips" not in data or trip_name not in data["trips"]:
         st.error("Reise nicht gefunden.")
         return
         
     trip = data["trips"][trip_name]
-
-    st.header("📸 Fotos")
-
-    # Sicherstellen, dass die Liste "images" existiert
     if "images" not in trip:
         trip["images"] = []
 
-    uploaded = st.file_uploader("Bilder hochladen", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+    st.header("📸 Reise-Galerie")
 
-    if st.button("Upload") and uploaded:
-        for file in uploaded:
-            img_bytes = file.read()
-            # Konvertierung zu WebP (spart Platz in der JSON)
-            webp_bytes = convert_to_webp(img_bytes)
-
-            # Eindeutige ID erzeugen (Dateiname + Zufall), um Key-Fehler zu vermeiden
-            unique_id = f"{file.name}_{uuid.uuid4().hex[:6]}"
-
-            trip["images"].append({
-                "id": unique_id,
-                "data": base64.b64encode(webp_bytes).decode(),
-                "caption": ""
-            })
-
-        save_db(data)
-        st.rerun()
-
-    # Bilder in zwei Spalten anzeigen
-    cols = st.columns(2)
-
-    for i, img in enumerate(trip["images"]):
-        # REPARATUR-LOGIK: Falls ID fehlt, temporäre ID für diesen Durchlauf generieren
-        img_id = img.get("id", f"old_img_{i}")
+    # --- UPLOAD BEREICH ---
+    with st.expander("📤 Neue Fotos hochladen"):
+        uploaded = st.file_uploader("Bilder wählen", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
         
-        with cols[i % 2]:
-            try:
-                data_bytes = base64.b64decode(img["data"])
-                st.image(data_bytes)
-
-                with st.expander("Bearbeiten"):
-                    # Caption-Feld mit sicherem Key
-                    current_caption = img.get("caption", "")
-                    new_caption = st.text_input("Bildunterschrift", value=current_caption, key=f"c_{img_id}")
-                    
-                    if new_caption != current_caption:
-                        img["caption"] = new_caption
-                        save_db(data)
-                        # Kein rerun hier nötig, da Textfelder den State selbst halten
-
-                    col_rot, col_del = st.columns(2)
-
-                    if col_rot.button("Drehen 🔄", key=f"rot_{img_id}"):
-                        im = Image.open(BytesIO(data_bytes)).rotate(-90, expand=True)
+        if st.button("Hochladen & Optimieren", key="upload_btn"):
+            if uploaded:
+                with st.spinner("Bilder werden verarbeitet..."):
+                    for file in uploaded:
+                        # Bild öffnen und skalieren (um JSON klein zu halten)
+                        img = Image.open(file)
+                        max_size = (1024, 1024) # Max 1024px Breite/Höhe
+                        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                        
+                        # In WebP umwandeln
                         buf = BytesIO()
-                        im.save(buf, format="WEBP")
-                        img["data"] = base64.b64encode(buf.getvalue()).decode()
-                        save_db(data)
-                        st.rerun()
+                        img.save(buf, format="WEBP", quality=70)
+                        webp_bytes = buf.getvalue()
 
-                    if col_del.button("Löschen 🗑️", key=f"del_{img_id}"):
-                        trip["images"] = [x for x in trip["images"] if x.get("id") != img.get("id") or x == img]
-                        save_db(data)
-                        st.rerun()
-            except Exception as e:
-                st.error(f"Fehler beim Laden eines Bildes: {e}")
+                        unique_id = f"img_{uuid.uuid4().hex[:8]}"
 
-# Hinweis: st.experimental_rerun() wurde durch st.rerun() ersetzt.
+                        trip["images"].append({
+                            "id": unique_id,
+                            "data": base64.b64encode(webp_bytes).decode(),
+                            "caption": "",
+                            "date": datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+                        })
+                    save_db(data)
+                    st.success(f"{len(uploaded)} Bilder hinzugefügt!")
+                    st.rerun()
+
+    st.divider()
+
+    # --- ANZEIGE BEREICH ---
+    if not trip["images"]:
+        st.info("Noch keine Fotos hochgeladen. Sei der Erste!")
+    else:
+        # Bilder in 3 Spalten (sieht auf Desktop besser aus)
+        cols = st.columns(3)
+
+        for i, img in enumerate(trip["images"]):
+            img_id = img.get("id", f"old_{i}")
+            
+            with cols[i % 3]:
+                try:
+                    data_bytes = base64.b64decode(img["data"])
+                    st.image(data_bytes, use_container_width=True)
+                    
+                    if img.get("caption"):
+                        st.caption(f"💬 {img['caption']}")
+
+                    with st.expander("⚙️ Optionen"):
+                        # Bildunterschrift
+                        new_cap = st.text_input("Unterschrift", value=img.get("caption", ""), key=f"cap_{img_id}")
+                        if new_cap != img.get("caption"):
+                            img["caption"] = new_cap
+                            save_db(data)
+                            st.rerun()
+
+                        c_rot, c_del = st.columns(2)
+                        
+                        # Drehen
+                        if c_rot.button("🔄 Drehen", key=f"rot_{img_id}"):
+                            im = Image.open(BytesIO(data_bytes)).rotate(-90, expand=True)
+                            buf = BytesIO()
+                            im.save(buf, format="WEBP", quality=75)
+                            img["data"] = base64.b64encode(buf.getvalue()).decode()
+                            save_db(data)
+                            st.rerun()
+
+                        # Löschen (Gefestigte Logik)
+                        if c_del.button("🗑️ Löschen", key=f"del_{img_id}"):
+                            trip["images"] = [x for x in trip["images"] if x.get("id") != img_id]
+                            save_db(data)
+                            st.rerun()
+                            
+                except Exception as e:
+                    st.error(f"Fehler: {e}")

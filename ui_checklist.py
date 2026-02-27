@@ -1,11 +1,5 @@
 import streamlit as st
 from storage import save_db, new_id
-# Falls diese Services noch nicht fertig sind, können sie Fehlermeldungen werfen
-try:
-    from email_service import send_checklist_pdf
-    from pdf_service import generate_checklist_pdf
-except ImportError:
-    pass
 
 # -------------------------------------------------
 # Checkliste (Ausrüstung / Verpflegung)
@@ -13,32 +7,34 @@ except ImportError:
 def render_checklist(data, trip_name, user):
     trip = data["trips"][trip_name]
 
-    st.header("🧭 Ausrüstung / Verpflegung")
+    st.header("🧭 Ausrüstung & Verpflegung")
 
     # Sicherstellen, dass participants ein Dictionary ist
     participants = trip.get("participants", {})
-    crew = list(participants.keys())
+    crew = sorted(list(participants.keys()))
 
-    # ---------------------------------------
-    # Filter
-    # ---------------------------------------
-    sel_user = st.selectbox("🔍 Zeige Items von:", ["Alle"] + crew)
-
-    # Sicherstellen, dass tasks eine Liste ist
+    # 1. Sicherstellen, dass die Liste "tasks" existiert
     if "tasks" not in trip:
         trip["tasks"] = []
     
-    tasks = trip["tasks"]
+    # ---------------------------------------
+    # Filter
+    # ---------------------------------------
+    sel_user = st.selectbox("🔍 Zeige Items von:", ["Alle"] + crew, key="filter_user")
+
+    # Filter-Logik
+    display_tasks = trip["tasks"]
     if sel_user != "Alle":
-        tasks = [t for t in tasks if isinstance(t.get("who"), list) and sel_user in t["who"]]
+        display_tasks = [t for t in trip["tasks"] if isinstance(t.get("who"), list) and sel_user in t["who"]]
 
     # ---------------------------------------
     # Neues Item hinzufügen
     # ---------------------------------------
-    with st.expander("➕ Neues Item"):
-        job = st.text_input("Was?")
-        who = st.multiselect("Wer bringt es mit?", crew)
-        if st.button("Hinzufügen"):
+    with st.expander("➕ Neues Item hinzufügen"):
+        job = st.text_input("Was wird benötigt?", placeholder="z.B. Gaskocher, Zelt, Nudeln...", key="new_job_input")
+        who = st.multiselect("Wer bringt es mit?", crew, key="new_who_input")
+        
+        if st.button("Hinzufügen", key="btn_add_task"):
             if job:
                 new_task = {
                     "id": new_id("task"),
@@ -46,76 +42,69 @@ def render_checklist(data, trip_name, user):
                     "who": who,
                     "done": False
                 }
-                trip["tasks"].append(new_entry)
+                trip["tasks"].append(new_task) # FIX: Hier hieß es vorher new_entry
                 save_db(data)
+                st.success(f"'{job}' hinzugefügt!")
                 st.rerun()
+            else:
+                st.warning("Bitte gib an, was mitgebracht werden soll.")
+
+    st.divider()
 
     # ---------------------------------------
     # Liste anzeigen
     # ---------------------------------------
-    if not tasks:
-        st.info("Keine Items vorhanden.")
+    if not display_tasks:
+        st.info(f"Keine Items für '{sel_user}' vorhanden.")
     else:
-        for i, t in enumerate(tasks):
-            # REPARATUR: Falls ID fehlt, generieren wir eine temporäre für den Key
+        for i, t in enumerate(display_tasks):
             t_id = t.get("id", f"task_{i}")
             
+            # Spalten: Checkbox | Text | Löschen
             c1, c2, c3 = st.columns([0.1, 0.75, 0.15])
 
-            # Checkbox für Erledigt-Status
-            if c1.checkbox("", value=t.get("done", False), key=f"check_{t_id}"):
-                t["done"] = not t.get("done", False)
+            # Status ändern
+            is_done = t.get("done", False)
+            if c1.checkbox("", value=is_done, key=f"check_{t_id}"):
+                t["done"] = not is_done
                 save_db(data)
                 st.rerun()
 
-            who_list = t.get("who", [])
-            who_txt = ", ".join(who_list) if who_list else "Offen"
-            
-            is_done = t.get("done", False)
-            label = f"~~{t.get('job', 'Unbekannt')}~~" if is_done else t.get('job', 'Unbekannt')
-            c2.write(f"{label} ({who_txt})")
+            # Text-Anzeige mit Durchstreichen bei Erledigt
+            who_txt = ", ".join(t.get("who", [])) if t.get("who") else "Offen"
+            label = f"~~{t.get('job')}~~" if is_done else f"**{t.get('job')}**"
+            c2.markdown(f"{label}  \n*{who_txt}*", unsafe_allow_html=True)
 
-            # Lösch-Button
+            # Lösch-Button (FIX: Eindeutige ID-Filterung)
             if c3.button("🗑️", key=f"del_{t_id}"):
-                trip["tasks"] = [x for x in trip["tasks"] if x.get("id") != t.get("id") or x == t]
+                trip["tasks"] = [x for x in trip["tasks"] if x.get("id") != t_id]
                 save_db(data)
                 st.rerun()
 
     st.divider()
 
     # ---------------------------------------
-    # PDF EXPORT + MAIL-VERSAND
+    # Export-Bereich (PDF/Text)
     # ---------------------------------------
-    st.subheader("📄 Checkliste exportieren / versenden")
-
+    st.subheader("📄 Export & Druck")
+    
     if sel_user != "Alle":
-        user_items = [t.get("job") for t in trip["tasks"] if isinstance(t.get("who"), list) and sel_user in t["who"]]
-
-        col_pdf, col_mail = st.columns(2)
-
-        with col_pdf:
-            if st.button(f"PDF für {sel_user} erstellen"):
-                try:
-                    pdf = generate_checklist_pdf(sel_user, user_items, trip_name)
-                    st.download_button(f"📥 PDF herunterladen", data=pdf,
-                                       file_name=f"Checkliste_{sel_user}.pdf")
-                except NameError:
-                    st.error("PDF-Service nicht konfiguriert.")
-
-        with col_mail:
-            # Sicherer Zugriff auf Teilnehmer-Daten (Dictionary vs. String Check)
-            u_data = participants.get(sel_user, {})
-            email = u_data.get("email", "") if isinstance(u_data, dict) else ""
-
-            if email:
-                if st.button(f"📧 An {sel_user} senden"):
-                    try:
-                        pdf = generate_checklist_pdf(sel_user, user_items, trip_name)
-                        send_checklist_pdf(sel_user, email, pdf, trip_name)
-                        st.success("Gesendet!")
-                    except NameError:
-                        st.error("E-Mail-Service nicht konfiguriert.")
-            else:
-                st.warning("Keine E-Mail für diesen Nutzer hinterlegt.")
+        user_items = [t.get("job") for t in display_tasks if not t.get("done")]
+        
+        if user_items:
+            st.write(f"Offene Items für {sel_user}:")
+            # Einfacher Text-Export als Fallback für PDF-Service
+            export_text = f"CHECKLISTE FÜR {sel_user.upper()}\nReise: {trip_name}\n" + "-"*20 + "\n"
+            for item in user_items:
+                export_text += f"[ ] {item}\n"
+            
+            st.download_button(
+                label=f"📥 Liste für {sel_user} als .txt speichern",
+                data=export_text,
+                file_name=f"Checkliste_{sel_user}.txt",
+                mime="text/plain"
+            )
+        else:
+            st.success(f"Super! {sel_user} hat bereits alles erledigt.")
     else:
-        st.info("Bitte einen Teilnehmer oben auswählen, um ein PDF zu generieren.")
+        st.caption("Wähle einen Teilnehmer oben aus, um eine persönliche Liste zu exportieren.")

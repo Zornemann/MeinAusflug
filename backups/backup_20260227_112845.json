@@ -56,26 +56,86 @@
             "messages": [
                 {
                     "user": "Admin",
-                    "text": "test"
+                    "text": "test",
+                    "read_by": [
+                        "Dennis"
+                    ]
                 },
                 {
                     "user": "Admin",
-                    "text": "hallo zusammen"
+                    "text": "hallo zusammen",
+                    "read_by": [
+                        "Dennis"
+                    ]
                 },
                 {
                     "user": "Admin",
                     "text": "test",
-                    "time": "2026-02-26 13:36:06"
+                    "time": "2026-02-26 13:36:06",
+                    "read_by": [
+                        "Dennis"
+                    ]
                 },
                 {
                     "user": "Admin",
                     "text": "test",
-                    "time": "2026-02-26 14:09:56.879766"
+                    "time": "2026-02-26 14:09:56.879766",
+                    "read_by": [
+                        "Dennis"
+                    ]
                 },
                 {
                     "user": "Admin",
                     "text": "test2",
-                    "time": "2026-02-26 14:10:06.941380"
+                    "time": "2026-02-26 14:10:06.941380",
+                    "read_by": [
+                        "Dennis"
+                    ]
+                },
+                {
+                    "id": "msg_ecaa1b251a",
+                    "user": "Dennis",
+                    "text": "test",
+                    "time": "2026-02-26T16:08:28.092667",
+                    "read_by": [
+                        "Dennis"
+                    ]
+                },
+                {
+                    "id": "msg_54ba9dd5d3",
+                    "user": "Dennis",
+                    "text": "test2",
+                    "time": "2026-02-27T08:36:30.270663",
+                    "read_by": [
+                        "Dennis"
+                    ]
+                },
+                {
+                    "id": "msg_095746_96b751",
+                    "user": "Dennis",
+                    "text": "test",
+                    "time": "2026-02-27T09:57:46.253937",
+                    "read_by": [
+                        "Dennis"
+                    ]
+                },
+                {
+                    "id": "msg_095758_b56fdf",
+                    "user": "Dennis",
+                    "text": "1",
+                    "time": "2026-02-27T09:57:58.004550",
+                    "read_by": [
+                        "Dennis"
+                    ]
+                },
+                {
+                    "id": "msg_095801_9643ef",
+                    "user": "Dennis",
+                    "text": "2",
+                    "time": "2026-02-27T09:58:01.625930",
+                    "read_by": [
+                        "Dennis"
+                    ]
                 }
             ],
             "expenses": [],
@@ -89,7 +149,22 @@
             "last_read": {
                 "Admin": "2026-02-26 14:23:22"
             },
-            "custom_templates": {}
+            "custom_templates": {},
+            "details": {
+                "destination": "Zeltplatz Schohleck an der Lahn",
+                "loc_name": "",
+                "extra": "",
+                "street": "Im Schohleck",
+                "plz": "35606",
+                "city": "Solms",
+                "start_date": "2026-02-27",
+                "end_date": "2026-03-02",
+                "meet_date": "2026-06-10",
+                "meet_time": "18:00:00",
+                "homepage": "https://",
+                "kontakt": ""
+            },
+            "typing": {}
         }
     }
 }
