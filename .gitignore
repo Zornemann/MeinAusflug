@@ -1,0 +1,6 @@
+﻿__pycache__/
+*.pyc
+.venv/
+backups/
+uploads/
+reisen_daten.json
