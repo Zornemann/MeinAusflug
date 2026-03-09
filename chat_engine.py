@@ -66,14 +66,7 @@ def _safe_upload_path(msg_id: str, filename: str) -> str:
     return os.path.join(UPLOAD_FOLDER, f"{msg_id}_{safe}{ext}")
 
 def _play_notification_sound():
-    st.components.v1.html(
-        """
-        <audio autoplay>
-            <source src="https://www.soundjay.com/buttons/sounds/button-3.mp3" type="audio/mpeg">
-        </audio>
-        """,
-        height=0,
-    )
+    return
 
 def _ensure_trip_structures(trip: dict):
     if "messages" not in trip or not isinstance(trip["messages"], list):
@@ -325,14 +318,6 @@ def render_chat(data: dict, trip_name: str, user: str):
         save_db(data)
 
     # Page scroll to bottom so input is visible (best-effort)
-    st.components.v1.html(
-        """
-        <script>
-          try { window.parent.scrollTo(0, document.body.scrollHeight); } catch(e) {}
-        </script>
-        """,
-        height=0,
-    )
 
 
 def chat_input(data: dict, trip_name: str, user: str):

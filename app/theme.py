@@ -11,12 +11,10 @@ def apply_theme():
     if mode:
         bg = "#0e1117"
         text = "#ffffff"
-        card = "#1c1f26"
         border = "rgba(255,255,255,0.08)"
     else:
         bg = "#ffffff"
         text = "#000000"
-        card = "#f8f9fa"
         border = "rgba(0,0,0,0.08)"
 
     st.markdown(
@@ -61,41 +59,4 @@ def apply_theme():
         </style>
         """,
         unsafe_allow_html=True,
-    )
-
-    st.components.v1.html(
-        """
-        <script>
-          (function () {
-            try {
-              const doc = window.parent.document;
-
-              doc.documentElement.lang = "de";
-              doc.documentElement.setAttribute("translate", "no");
-              doc.documentElement.classList.add("notranslate");
-
-              if (doc.body) {
-                doc.body.setAttribute("translate", "no");
-                doc.body.classList.add("notranslate");
-              }
-
-              const head = doc.head;
-              if (head && !head.querySelector('meta[name="google"][content="notranslate"]')) {
-                const m = doc.createElement("meta");
-                m.name = "google";
-                m.content = "notranslate";
-                head.appendChild(m);
-              }
-
-              if (head && !head.querySelector('meta[name="viewport"]')) {
-                const viewport = doc.createElement("meta");
-                viewport.name = "viewport";
-                viewport.content = "width=device-width, initial-scale=1, viewport-fit=cover";
-                head.appendChild(viewport);
-              }
-            } catch (e) {}
-          })();
-        </script>
-        """,
-        height=0,
     )
