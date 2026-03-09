@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import streamlit as st
 from storage import load_db, save_db
 from config import APP_NAME
@@ -39,3 +40,6 @@ render_chat(data, trip_name, user)
 chat_input(data, trip_name, user)
 
 save_db(data)
+=======
+import meinAusflug  # noqa: F401
+>>>>>>> 656eda1 (Initial working version: Chat + Checklist with Supabase storage)

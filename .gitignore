@@ -4,3 +4,8 @@
 backups/
 uploads/
 reisen_daten.json
+<<<<<<< HEAD
+=======
+.streamlit/secrets.toml
+**/__pycache__/
+>>>>>>> 656eda1 (Initial working version: Chat + Checklist with Supabase storage)

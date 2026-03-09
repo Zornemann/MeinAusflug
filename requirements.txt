@@ -4,4 +4,9 @@ Pillow
 reportlab
 requests
 geopy
+<<<<<<< HEAD
 qrcode
+=======
+qrcode
+psycopg[binary]
+>>>>>>> 656eda1 (Initial working version: Chat + Checklist with Supabase storage)
