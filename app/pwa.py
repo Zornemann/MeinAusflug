@@ -4,12 +4,15 @@ import streamlit as st
 
 MANIFEST_CANDIDATES = [
     "/app/static/manifest.json",
+    "/app/static/manifest.webmanifest",
     "/static/manifest.json",
+    "/manifest.json",
     "./app/static/manifest.json",
 ]
 SW_CANDIDATES = [
     "/app/static/service-worker.js",
     "/static/service-worker.js",
+    "/service-worker.js",
     "./app/static/service-worker.js",
 ]
 ICON_192_CANDIDATES = [
@@ -90,7 +93,8 @@ def enable_pwa(app_name: str = "MeinAusflug", theme_color: str = "#0e1117") -> N
 
           if (swPath && "serviceWorker" in navigator) {{
             try {{
-              await navigator.serviceWorker.register(swPath, {{ scope: "/" }});
+              const scope = swPath.startsWith("/app/static/") ? "/app/static/" : "/";
+              await navigator.serviceWorker.register(swPath, {{ scope }});
             }} catch (err) {{
               console.warn("SW registration failed", err);
             }}

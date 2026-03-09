@@ -198,7 +198,6 @@ def _apply_quick_change(trip: dict, data: dict, tid: str, label_to_user: dict[st
                 normalize_data(data)
                 save_db(data)
                 st.session_state.force_reload = True
-                st.rerun()
             break
 
 
@@ -245,7 +244,7 @@ def render_checklist(data: dict, trip_name: str, user: str):
     labels, label_to_user = _user_select_options(trip, user)
 
     # ---- Hinzufügen ----
-    with st.form("add_task_form", clear_on_submit=True):
+    with st.form(f"add_task_form_{trip_name}", clear_on_submit=True):
         c1, c2, c3, c4 = st.columns([0.44, 0.10, 0.18, 0.28])
         item = c1.text_input("Was bringe ich mit", placeholder="z.B. Zahnbürste", label_visibility="collapsed")
         qty = c2.number_input("Anzahl", min_value=1, step=1, value=1, label_visibility="collapsed")
@@ -286,12 +285,12 @@ def render_checklist(data: dict, trip_name: str, user: str):
 
     # ---- Filter + Export ----
     f1, f2, f3, f4, f5, f6 = st.columns([0.28, 0.14, 0.18, 0.16, 0.12, 0.12])
-    q = f1.text_input("Suche", placeholder="Suche...", label_visibility="collapsed")
-    status = f2.selectbox("Status", ["Alle", "Offen", "Erledigt"], index=0, label_visibility="collapsed")
-    cat_filter = f3.selectbox("Kategorie", ["Alle"] + CATEGORIES, index=0, label_visibility="collapsed")
-    person_label = f4.selectbox("Wer bringt's", ["Alle"] + (labels if labels else []), index=0, label_visibility="collapsed")
-    sort = f5.selectbox("Sort", ["A–Z", "Neu"], index=0, label_visibility="collapsed")
-    export_mode = f6.selectbox("Export", ["Alle", "Gefiltert"], index=1, label_visibility="collapsed")
+    q = f1.text_input("Suche", placeholder="Suche...", label_visibility="collapsed", key=f"check_q_{trip_name}")
+    status = f2.selectbox("Status", ["Alle", "Offen", "Erledigt"], index=0, label_visibility="collapsed", key=f"check_status_{trip_name}")
+    cat_filter = f3.selectbox("Kategorie", ["Alle"] + CATEGORIES, index=0, label_visibility="collapsed", key=f"check_cat_{trip_name}")
+    person_label = f4.selectbox("Wer bringt's", ["Alle"] + (labels if labels else []), index=0, label_visibility="collapsed", key=f"check_person_{trip_name}")
+    sort = f5.selectbox("Sort", ["A–Z", "Neu"], index=0, label_visibility="collapsed", key=f"check_sort_{trip_name}")
+    export_mode = f6.selectbox("Export", ["Alle", "Gefiltert"], index=1, label_visibility="collapsed", key=f"check_export_{trip_name}")
 
     def matches(t: dict) -> bool:
         txt = (t.get("item") or "").lower()
