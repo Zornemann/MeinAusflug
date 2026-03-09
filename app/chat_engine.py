@@ -147,6 +147,24 @@ def _render_reactions_line(msg: dict):
     if parts:
         st.caption("  ".join(parts))
 
+
+def _last_read_value(trip: dict, user: str, key: str) -> str:
+    last_read = trip.setdefault("last_read", {})
+    if not isinstance(last_read, dict):
+        trip["last_read"] = {}
+        last_read = trip["last_read"]
+    return str(last_read.get(f"{user}:{key}") or last_read.get(user) or "2000-01-01T00:00:00")
+
+
+def unread_chat_count(trip: dict, user: str, role: str = "member") -> int:
+    last_read = _last_read_value(trip, user, "chat")
+    return len([m for m in trip.get("messages", []) if str(m.get("time") or "") > last_read and m.get("user") != user and _is_visible_to_user(m, user, role)])
+
+
+def mark_chat_read(trip: dict, data: dict, user: str) -> None:
+    trip.setdefault("last_read", {})[f"{user}:chat"] = _now_iso()
+    save_db(data)
+
 # -----------------------------
 # Presence
 # -----------------------------
@@ -200,6 +218,13 @@ def render_chat(data: dict, trip_name: str, user: str):
         st.session_state[ss_key] = last_msg_id
     elif last_msg_id and prev_last_id is None:
         st.session_state[ss_key] = last_msg_id
+
+    unread_count = unread_chat_count(trip, user, role)
+    if unread_count > 0:
+        st.info(f"🔔 {unread_count} ungelesene Chat-Nachrichten.")
+        if st.button("Chat als gelesen markieren", key=f"mark_chat_read_{trip_name}"):
+            mark_chat_read(trip, data, user)
+            st.rerun()
 
     db_dirty = False
 
