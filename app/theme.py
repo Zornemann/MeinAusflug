@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 def apply_theme():
     if "dark_mode" not in st.session_state:
         st.session_state.dark_mode = False
@@ -24,18 +25,36 @@ def apply_theme():
         .stApp {{
             background-color: {bg};
             color: {text};
+            -webkit-tap-highlight-color: transparent;
         }}
 
-        .stButton button {{
+        .stButton button, .stDownloadButton button {{
             border-radius: 10px;
+            min-height: 44px;
+        }}
+
+        .stTextInput input, .stTextArea textarea, .stDateInput input, .stTimeInput input, .stNumberInput input {{
+            min-height: 44px;
+            font-size: 16px;
         }}
 
         div[data-testid="stVerticalBlock"] {{
             border-color: {border};
         }}
 
+        [data-testid="stImage"] img {{
+            border-radius: 12px;
+        }}
+
         @media (max-width: 768px) {{
-            .stButton button {{
+            .block-container {{
+                padding-top: 1rem;
+                padding-left: 0.8rem;
+                padding-right: 0.8rem;
+                padding-bottom: 5rem;
+            }}
+
+            .stButton button, .stDownloadButton button {{
                 width: 100%;
             }}
         }}
@@ -44,7 +63,6 @@ def apply_theme():
         unsafe_allow_html=True,
     )
 
-    # ✅ Strong "no translate" for Chrome/Google Translate
     st.components.v1.html(
         """
         <script>
@@ -68,7 +86,14 @@ def apply_theme():
                 m.content = "notranslate";
                 head.appendChild(m);
               }
-            } catch(e) {}
+
+              if (head && !head.querySelector('meta[name="viewport"]')) {
+                const viewport = doc.createElement("meta");
+                viewport.name = "viewport";
+                viewport.content = "width=device-width, initial-scale=1, viewport-fit=cover";
+                head.appendChild(viewport);
+              }
+            } catch (e) {}
           })();
         </script>
         """,

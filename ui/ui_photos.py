@@ -1,3 +1,4 @@
+import datetime
 import streamlit as st
 from core.utils import convert_to_webp
 from core.storage import save_db
@@ -53,13 +54,13 @@ def render_photos(data, trip_name):
     if not trip["images"]:
         st.info("Noch keine Fotos hochgeladen. Sei der Erste!")
     else:
-        # Bilder in 3 Spalten (sieht auf Desktop besser aus)
-        cols = st.columns(3)
+        # Zwei Spalten funktionieren auf Mobilgeräten deutlich robuster.
+        cols = st.columns(2)
 
         for i, img in enumerate(trip["images"]):
             img_id = img.get("id", f"old_{i}")
             
-            with cols[i % 3]:
+            with cols[i % 2]:
                 try:
                     data_bytes = base64.b64decode(img["data"])
                     st.image(data_bytes)
