@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java
+      - name: Java einrichten
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -26,17 +26,17 @@ jobs:
         run: npm install -g @bubblewrap/cli
 
       - name: Arbeitsordner anlegen
-        run: mkdir twa-build
+        run: mkdir -p twa-build
 
       - name: Bubblewrap initialisieren
         working-directory: twa-build
         run: |
-          bubblewrap init \
-            --manifest="https://DEINE-APP-URL/manifest.json"
+          yes "" | bubblewrap init --manifest="https://DEINE-ECHTE-APP-URL/manifest.json"
 
       - name: AAB bauen
         working-directory: twa-build
-        run: bubblewrap build
+        run: |
+          yes "" | bubblewrap build
 
       - name: Build-Artefakte hochladen
         uses: actions/upload-artifact@v4
