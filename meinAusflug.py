@@ -584,8 +584,8 @@ auto_refresh(interval=5)
 # auto_refresh(interval=5)
 >>>>>>> 656eda1 (Initial working version: Chat + Checklist with Supabase storage)
 
-if enable_pwa:
-    enable_pwa(app_name=APP_NAME)
+##if enable_pwa:
+    ##enable_pwa(app_name=APP_NAME)
 
 <<<<<<< HEAD
 user, trip_name = st.session_state.user, st.session_state.trip
