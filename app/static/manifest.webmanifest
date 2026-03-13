@@ -1,0 +1,26 @@
+{
+  "name": "MeinAusflug PRO",
+  "short_name": "MeinAusflug",
+  "description": "Reiseplanung, Chat, Checkliste, Kosten und Fotos in einer mobilen App.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1117",
+  "theme_color": "#0e1117",
+  "lang": "de-DE",
+  "icons": [
+    {
+      "src": "/app/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

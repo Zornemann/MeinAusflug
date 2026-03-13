@@ -1,0 +1,7 @@
+Streamlit deployment notes:
+- Main file path: meinAusflug.py
+- Static files are mirrored under app/static/ because Streamlit Cloud did not serve the project-root static/ folder reliably in this setup.
+- Test these URLs after deploy + reboot:
+  /app/static/test.txt
+  /app/static/manifest.json
+  /app/static/manifest.webmanifest
