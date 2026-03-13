@@ -138,12 +138,15 @@ def _migrate_and_fix_ids(trip: dict) -> bool:
         if "created_at" not in t:
             t["created_at"] = ""
             changed = True
+<<<<<<< HEAD
         if "updated_at" not in t:
             t["updated_at"] = t.get("created_at", "")
             changed = True
         if "updated_by" not in t:
             t["updated_by"] = t.get("created_by", "")
             changed = True
+=======
+>>>>>>> 8440fa15076997009e17aff324444855a00220b3
 
         if "brought_by" not in t or not str(t.get("brought_by") or "").strip():
             if (t.get("assigned") or "").strip():
@@ -200,8 +203,11 @@ def _apply_quick_change(trip: dict, data: dict, tid: str, label_to_user: dict[st
                 changed = True
 
             if changed:
+<<<<<<< HEAD
                 t["updated_at"] = _now_iso()
                 t["updated_by"] = user
+=======
+>>>>>>> 8440fa15076997009e17aff324444855a00220b3
                 _sync_task_aliases(trip)
                 normalize_data(data)
                 save_db(data)
@@ -277,8 +283,11 @@ def render_checklist(data: dict, trip_name: str, user: str):
                     "brought_by": label_to_user.get(brought_label, user),
                     "created_by": user,
                     "created_at": _now_iso(),
+<<<<<<< HEAD
                     "updated_by": user,
                     "updated_at": _now_iso(),
+=======
+>>>>>>> 8440fa15076997009e17aff324444855a00220b3
                     "done": False,
                 }
             )
@@ -475,8 +484,11 @@ def render_checklist(data: dict, trip_name: str, user: str):
                 t["cat"] = _normalize_category(st.session_state.get(f"cat_edit_{suffix}", "Sonstiges"))
                 t["item"] = (st.session_state.get(f"item_edit_{suffix}", "") or "").strip()
                 t["qty"] = int(st.session_state.get(f"qty_edit_{suffix}", 1) or 1)
+<<<<<<< HEAD
                 t["updated_at"] = _now_iso()
                 t["updated_by"] = user
+=======
+>>>>>>> 8440fa15076997009e17aff324444855a00220b3
                 st.session_state[editing_key] = False
                 _sync_task_aliases(trip)
                 normalize_data(data)
@@ -490,8 +502,11 @@ def render_checklist(data: dict, trip_name: str, user: str):
         # Übernehmen
         if cols[7].button("Ich", key=f"claim_{suffix}"):
             t["brought_by"] = user
+<<<<<<< HEAD
             t["updated_at"] = _now_iso()
             t["updated_by"] = user
+=======
+>>>>>>> 8440fa15076997009e17aff324444855a00220b3
             _sync_task_aliases(trip)
             normalize_data(data)
             save_db(data)

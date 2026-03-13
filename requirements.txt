@@ -6,4 +6,7 @@ requests
 geopy
 qrcode
 psycopg[binary]
+<<<<<<< HEAD
 streamlit-autorefresh
+=======
+>>>>>>> 8440fa15076997009e17aff324444855a00220b3
