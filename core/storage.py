@@ -136,21 +136,10 @@ def _normalize_trip(key: str, trip: dict) -> dict:
             trip['participants'] = {str(n): {'password': ''} for n in trip['participants']}
         else:
             trip['participants'] = {}
-    for uname, pdata in list(trip['participants'].items()):
-        if not isinstance(pdata, dict):
-            trip['participants'][uname] = {'display_name': str(uname), 'status': 'accepted', 'email': '', 'role': 'member'}
-            pdata = trip['participants'][uname]
-        pdata.setdefault('display_name', str(uname))
-        pdata.setdefault('status', 'accepted')
-        pdata.setdefault('email', '')
-        pdata.setdefault('invited_by', '')
-        pdata.setdefault('role', 'member')
     if not isinstance(trip.get('typing'), dict):
         trip['typing'] = {}
     if not isinstance(trip.get('presence'), dict):
         trip['presence'] = {}
-    if not isinstance(trip.get('last_read'), dict):
-        trip['last_read'] = {}
     if not isinstance(trip.get('details'), dict):
         trip['details'] = {}
     d = trip['details']

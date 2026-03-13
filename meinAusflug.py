@@ -7,7 +7,7 @@ from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 from streamlit.components.v1 import html
 
-from app.chat_engine import mark_chat_read, render_online_bar, unread_chat_count
+from app.chat_engine import render_online_bar
 from app.theme import apply_theme
 from core.config import APP_NAME, APP_URL
 from core.storage import get_storage_status, load_db, normalize_data, save_db
@@ -123,44 +123,6 @@ def get_trip_choices(data: dict):
     choices.sort(key=lambda x: x[0].lower())
     return choices
 
-
-
-def _ensure_last_read(trip: dict):
-    if not isinstance(trip.get("last_read"), dict):
-        trip["last_read"] = {}
-
-
-def _last_read_value(trip: dict, user: str, key: str) -> str:
-    _ensure_last_read(trip)
-    return str(trip["last_read"].get(f"{user}:{key}") or trip["last_read"].get(user) or "2000-01-01T00:00:00")
-
-
-def _unread_checklist_count(trip: dict, user: str) -> int:
-    last_read = _last_read_value(trip, user, "checklist")
-    count = 0
-    for t in trip.get("tasks", []) or trip.get("checklist", []):
-        ts = str(t.get("updated_at") or t.get("created_at") or "")
-        actor = str(t.get("updated_by") or t.get("created_by") or "")
-        if ts > last_read and actor != user:
-            count += 1
-    return count
-
-
-def _mark_checklist_read(trip: dict, data: dict, user: str):
-    _ensure_last_read(trip)
-    trip["last_read"][f"{user}:checklist"] = datetime.datetime.now().replace(microsecond=0).isoformat()
-    save_db(data)
-
-
-def _show_unread_toasts(chat_unread: int, checklist_unread: int):
-    prev_chat = st.session_state.get("_prev_chat_unread")
-    prev_check = st.session_state.get("_prev_check_unread")
-    if prev_chat is not None and chat_unread > prev_chat:
-        st.toast(f"💬 {chat_unread - prev_chat} neue Chat-Nachricht(en)")
-    if prev_check is not None and checklist_unread > prev_check:
-        st.toast(f"✅ {checklist_unread - prev_check} neue Checklisten-Änderung(en)")
-    st.session_state["_prev_chat_unread"] = chat_unread
-    st.session_state["_prev_check_unread"] = checklist_unread
 
 
 def ensure_logged_in():
@@ -305,46 +267,36 @@ save_db(data)
 
 st.title(f"🌍 {trip.get('name') or trip_key}")
 
-summary_cols = st.columns(5)
-chat_unread = unread_chat_count(trip, st.session_state.user, st.session_state.get("role", "member"))
-check_unread = _unread_checklist_count(trip, st.session_state.user)
-_show_unread_toasts(chat_unread, check_unread)
+summary_cols = st.columns(3)
 summary_cols[0].metric("Teilnehmer", len(trip.get("participants", {})))
-summary_cols[1].metric("Nachrichten", len(trip.get("messages", []) or trip.get("chat", [])), delta=f"{chat_unread} neu" if chat_unread else None)
-summary_cols[2].metric("Checklistenpunkte", len(trip.get("tasks", []) or trip.get("checklist", [])), delta=f"{check_unread} neu" if check_unread else None)
-summary_cols[3].metric("Ungelesen Chat", chat_unread)
-summary_cols[4].metric("Ungelesen Checkliste", check_unread)
+summary_cols[1].metric("Nachrichten", len(trip.get("messages", []) or trip.get("chat", [])))
+summary_cols[2].metric("Checklistenpunkte", len(trip.get("tasks", []) or trip.get("checklist", [])))
 
-nav_options = [
+
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Übersicht",
-    f"Chat{' 🔔' if chat_unread else ''}",
-    f"Checkliste{' 🔔' if check_unread else ''}",
+    "Chat",
+    "Checkliste",
     "Kosten",
     "Fotos",
     "Infos",
-]
-selected_view = st.segmented_control(
-    "Bereich",
-    nav_options,
-    default=st.session_state.get("selected_view", nav_options[0]),
-    selection_mode="single",
-)
-st.session_state.selected_view = selected_view
+])
 
-if selected_view == "Übersicht":
+with tab1:
     render_trip_overview(data, trip_key)
-elif selected_view == nav_options[1]:
-    if chat_unread:
-        mark_chat_read(trip, data, st.session_state.user)
+
+with tab2:
     render_online_bar(data, trip_key, st.session_state.user)
     render_chat(data, trip_key, st.session_state.user)
-elif selected_view == nav_options[2]:
-    if check_unread:
-        _mark_checklist_read(trip, data, st.session_state.user)
+
+with tab3:
     render_checklist(data, trip_key, st.session_state.user)
-elif selected_view == "Kosten":
+
+with tab4:
     render_costs(data, trip_key, st.session_state.user)
-elif selected_view == "Fotos":
+
+with tab5:
     render_photos(data, trip_key)
-else:
+
+with tab6:
     render_info(data, trip_key)
