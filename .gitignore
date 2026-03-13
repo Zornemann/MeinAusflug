@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+backups/
+uploads/
+reisen_daten.json
+.streamlit/secrets.toml
+**/__pycache__/

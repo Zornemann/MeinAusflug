@@ -1,0 +1,4 @@
+For Streamlit Community Cloud:
+- Main file path: meinAusflug.py
+- Static manifest URL after deploy: /app/static/manifest.json
+- Static folder must remain next to meinAusflug.py
