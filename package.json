@@ -1,0 +1,14 @@
+{
+  "name": "meinausflug-capacitor-wrapper",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3"
+  }
+}

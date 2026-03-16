@@ -152,7 +152,6 @@ def _normalize_trip(key: str, trip: dict) -> dict:
     d.setdefault('street', '')
     d.setdefault('plz', '')
     d.setdefault('city', '')
-    d.setdefault('home_city', '')
     today = str(datetime.date.today())
     d.setdefault('start_date', today)
     d.setdefault('end_date', today)
