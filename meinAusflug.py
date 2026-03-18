@@ -21,7 +21,6 @@ from ui.ui_info import render_info
 from ui.ui_photos import render_photos
 
 
-# Manifest fallback endpoint for Bubblewrap, because Streamlit static serving can be unreliable on Cloud.
 manifest_path = Path("static/manifest.json")
 if st.query_params.get("manifest") == "1" and manifest_path.exists():
     st.json(json.loads(manifest_path.read_text(encoding="utf-8")))
@@ -41,6 +40,47 @@ DEFAULT_TRIP_DETAILS = {
     "end_date": str(datetime.date.today()),
     "meet_date": str(datetime.date.today()),
     "meet_time": "18:00",
+}
+
+WEATHER_ICONS = {
+    0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 48: "🌫️",
+    51: "🌦️", 53: "🌦️", 55: "🌦️", 56: "🌧️", 57: "🌧️",
+    61: "🌧️", 63: "🌧️", 65: "🌧️", 66: "🌧️", 67: "🌧️",
+    71: "❄️", 73: "❄️", 75: "❄️", 77: "❄️",
+    80: "🌦️", 81: "🌧️", 82: "🌧️",
+    85: "❄️", 86: "❄️",
+    95: "⚡", 96: "⛈️", 99: "⛈️",
+}
+
+WEATHER_LABELS = {
+    0: "Klar",
+    1: "Meist klar",
+    2: "Teilweise bewölkt",
+    3: "Bewölkt",
+    45: "Nebel",
+    48: "Raureifnebel",
+    51: "Leichter Nieselregen",
+    53: "Nieselregen",
+    55: "Starker Nieselregen",
+    56: "Gefrierender Nieselregen",
+    57: "Starker gefrierender Nieselregen",
+    61: "Leichter Regen",
+    63: "Regen",
+    65: "Starker Regen",
+    66: "Leichter gefrierender Regen",
+    67: "Starker gefrierender Regen",
+    71: "Leichter Schneefall",
+    73: "Schneefall",
+    75: "Starker Schneefall",
+    77: "Schneegriesel",
+    80: "Leichte Regenschauer",
+    81: "Regenschauer",
+    82: "Starke Regenschauer",
+    85: "Leichte Schneeschauer",
+    86: "Starke Schneeschauer",
+    95: "Gewitter",
+    96: "Gewitter mit Hagel",
+    99: "Starkes Gewitter mit Hagel",
 }
 
 
@@ -68,44 +108,77 @@ def get_weather_data(city: str):
     city = (city or "").strip()
     if not city:
         return None
+
     try:
         geo_url = (
             "https://geocoding-api.open-meteo.com/v1/search?"
             f"name={urllib.parse.quote(city)}&count=1&language=de&format=json"
         )
-        geo_res = requests.get(geo_url, timeout=10).json()
-        if "results" not in geo_res or not geo_res["results"]:
+        geo_res = requests.get(geo_url, timeout=10)
+        geo_res.raise_for_status()
+        geo_data = geo_res.json()
+        results = geo_data.get("results") or []
+        if not results:
             return None
-        res = geo_res["results"][0]
-        lat, lon = res["latitude"], res["longitude"]
 
-        w_url = (
+        place = results[0]
+        lat, lon = place["latitude"], place["longitude"]
+
+        weather_url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
-            "&daily=weathercode,temperature_2m_max,temperature_2m_min"
-            "&current_weather=true&timezone=Europe%2FBerlin"
+            "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,"
+            "weather_code,wind_speed_10m,wind_direction_10m"
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,"
+            "precipitation_probability_max,sunrise,sunset,wind_speed_10m_max"
+            "&timezone=Europe%2FBerlin&forecast_days=5"
         )
-        w_res = requests.get(w_url, timeout=10).json()
-        icons = {0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 51: "🌦️", 61: "🌧️", 71: "❄️", 95: "⚡"}
+        weather_res = requests.get(weather_url, timeout=10)
+        weather_res.raise_for_status()
+        weather = weather_res.json()
 
-        if "current_weather" in w_res:
-            w_res["current_weather"]["icon"] = icons.get(
-                w_res["current_weather"].get("weathercode"), "🌡️"
+        current = weather.get("current") or {}
+        current_code = current.get("weather_code")
+        current["icon"] = WEATHER_ICONS.get(current_code, "🌡️")
+        current["label"] = WEATHER_LABELS.get(current_code, "Wetter")
+
+        daily = weather.get("daily") or {}
+        forecast = []
+        times = daily.get("time") or []
+        for i, day in enumerate(times[:5]):
+            code_list = daily.get("weather_code") or []
+            max_list = daily.get("temperature_2m_max") or []
+            min_list = daily.get("temperature_2m_min") or []
+            rain_list = daily.get("precipitation_sum") or []
+            prob_list = daily.get("precipitation_probability_max") or []
+            wind_list = daily.get("wind_speed_10m_max") or []
+            sunrise_list = daily.get("sunrise") or []
+            sunset_list = daily.get("sunset") or []
+
+            code = code_list[i] if i < len(code_list) else None
+            forecast.append(
+                {
+                    "date": day,
+                    "max": max_list[i] if i < len(max_list) else "–",
+                    "min": min_list[i] if i < len(min_list) else "–",
+                    "rain": rain_list[i] if i < len(rain_list) else "–",
+                    "rain_prob": prob_list[i] if i < len(prob_list) else "–",
+                    "wind_max": wind_list[i] if i < len(wind_list) else "–",
+                    "sunrise": sunrise_list[i] if i < len(sunrise_list) else "",
+                    "sunset": sunset_list[i] if i < len(sunset_list) else "",
+                    "icon": WEATHER_ICONS.get(code, "🌡️"),
+                    "label": WEATHER_LABELS.get(code, "Wetter"),
+                }
             )
 
-        forecast = []
-        if "daily" in w_res:
-            for i in range(min(5, len(w_res["daily"]["time"]))):
-                code = w_res["daily"]["weathercode"][i]
-                forecast.append(
-                    {
-                        "date": w_res["daily"]["time"][i],
-                        "max": w_res["daily"]["temperature_2m_max"][i],
-                        "min": w_res["daily"]["temperature_2m_min"][i],
-                        "icon": icons.get(code, "🌡️"),
-                    }
-                )
-        w_res["forecast"] = forecast
-        return w_res
+        return {
+            "place_name": place.get("name") or city,
+            "admin1": place.get("admin1") or "",
+            "country": place.get("country") or "",
+            "latitude": lat,
+            "longitude": lon,
+            "current": current,
+            "forecast": forecast,
+        }
     except Exception:
         return None
 
@@ -241,41 +314,59 @@ def _browser_notify(title: str, body: str, key: str):
     )
 
 
-
-
 def _invite_link(trip_name: str) -> str:
     base = (APP_URL or "").rstrip("/")
     trip_param = urllib.parse.quote(trip_name or "")
     return f"{base}/?trip={trip_param}" if base else f"?trip={trip_param}"
 
 
+def _fmt_time(value: str) -> str:
+    if not value:
+        return "–"
+    try:
+        return value.split("T", 1)[1][:5]
+    except Exception:
+        return value
+
+
 def _render_weather_section(details: dict):
     weather_city = (details.get("city") or details.get("destination") or "").strip()
+    st.markdown("### 🌤️ Wetter")
+
     if not weather_city:
         st.info("Für die Wettervorschau bitte mindestens Ort oder Reiseziel eintragen.")
         return
 
     weather = get_weather_data(weather_city)
     if not weather:
-        st.warning("Für den eingetragenen Ort konnte aktuell keine Wettervorschau geladen werden.")
+        st.warning(f"Für '{weather_city}' konnten aktuell keine Wetterdaten geladen werden.")
         return
 
-    st.markdown("### 🌤️ Wetter")
-    current = weather.get("current_weather") or {}
-    if current:
-        cc1, cc2, cc3 = st.columns(3)
-        cc1.metric("Jetzt", f'{current.get("temperature", "–")}°C')
-        wind = current.get("windspeed")
-        cc2.metric("Wind", f"{wind} km/h" if wind is not None else "–")
-        cc3.metric("Lage", current.get("icon", "🌡️"))
+    place_bits = [weather.get("place_name"), weather.get("admin1"), weather.get("country")]
+    st.caption(", ".join([x for x in place_bits if x]))
+
+    current = weather.get("current") or {}
+    current_cols = st.columns(4)
+    current_cols[0].metric(
+        "Jetzt",
+        f'{current.get("temperature_2m", "–")}°C',
+        f'gefühlt {current.get("apparent_temperature", "–")}°C' if current.get("apparent_temperature") is not None else None,
+    )
+    current_cols[1].metric("Luftfeuchte", f'{current.get("relative_humidity_2m", "–")} %')
+    current_cols[2].metric("Wind", f'{current.get("wind_speed_10m", "–")} km/h')
+    current_cols[3].metric("Wetterlage", current.get("icon", "🌡️"), current.get("label", ""))
 
     forecast = weather.get("forecast") or []
     if forecast:
-        cols = st.columns(len(forecast))
-        for col, day in zip(cols, forecast):
+        day_cols = st.columns(len(forecast))
+        for col, day in zip(day_cols, forecast):
             with col:
                 st.metric(day["date"], f'{day["max"]}°C', f'{day["min"]}°C')
-                st.caption(day["icon"])
+                st.caption(f'{day["icon"]} {day["label"]}')
+                st.caption(f'Regen: {day["rain"]} mm')
+                st.caption(f'Wahrsch.: {day["rain_prob"]} %')
+                st.caption(f'Wind max.: {day["wind_max"]} km/h')
+                st.caption(f'Sonne: {_fmt_time(day["sunrise"])} / {_fmt_time(day["sunset"])}')
 
 
 def _render_participant_preview(trip_key: str, trip: dict):
@@ -305,11 +396,7 @@ def render_trip_overview(data: dict, trip_key: str):
     c1, c2 = st.columns(2)
     with c1:
         destination = st.text_input("Reiseziel", details.get("destination", ""), key=f"dest_{trip_key}")
-        homepage = st.text_input(
-            "Homepage",
-            details.get("homepage") or details.get("loc_name", ""),
-            key=f"homepage_{trip_key}",
-        )
+        homepage = st.text_input("Homepage", details.get("homepage") or details.get("loc_name", ""), key=f"homepage_{trip_key}")
         street = st.text_input("Straße", details.get("street", ""), key=f"street_{trip_key}")
         meet_date = st.date_input(
             "Treffpunkt am (Datum)",
@@ -373,7 +460,6 @@ def render_trip_overview(data: dict, trip_key: str):
         )
 
     _render_weather_section(new_details)
-
     _render_participant_preview(trip_key, trip)
 
 

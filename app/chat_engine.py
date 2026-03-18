@@ -1,12 +1,13 @@
-import streamlit as st
 import datetime
-import os
-import time
-import re
 import html as _html
-from typing import Optional, List, Tuple
+import os
+import re
+import time
+from typing import List, Optional, Tuple
 
-from core.storage import save_db, new_id, normalize_data
+import streamlit as st
+
+from core.storage import new_id, normalize_data, save_db
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -25,8 +26,12 @@ _META_ESC_RE = re.compile(
     re.IGNORECASE,
 )
 
+REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢"]
+
+
 def _now_iso() -> str:
     return datetime.datetime.now().isoformat()
+
 
 def _format_time_hhmm(iso_or_hhmm: str) -> str:
     if not iso_or_hhmm:
@@ -41,23 +46,26 @@ def _format_time_hhmm(iso_or_hhmm: str) -> str:
         text = str(iso_or_hhmm).strip()
         return text[:16]
 
-def _clean_legacy_text(t: str) -> str:
-    if not t:
-        return ""
-    t = _META_RAW_RE.sub("", t)
-    t = _META_ESC_RE.sub("", t)
-    return t.strip()
 
-def _safe_text_for_markdown(t: str) -> str:
+def _clean_legacy_text(text: str) -> str:
+    if not text:
+        return ""
+    text = _META_RAW_RE.sub("", text)
+    text = _META_ESC_RE.sub("", text)
+    return text.strip()
+
+
+def _safe_text_for_markdown(text: str) -> str:
     """
     Safe text for st.markdown:
     - remove legacy junk
     - escape to avoid unintended HTML rendering
     - keep line breaks
     """
-    t = _clean_legacy_text(t or "")
-    t = _html.escape(t)
-    return t.replace("\n", "<br>")
+    text = _clean_legacy_text(text or "")
+    text = _html.escape(text)
+    return text.replace("\n", "<br>")
+
 
 def _safe_upload_path(msg_id: str, filename: str) -> str:
     base = os.path.basename(filename or "upload")
@@ -67,22 +75,25 @@ def _safe_upload_path(msg_id: str, filename: str) -> str:
     ext = ext[:12]
     return os.path.join(UPLOAD_FOLDER, f"{msg_id}_{safe}{ext}")
 
-def _play_notification_sound():
+
+def _play_notification_sound() -> None:
+    # Platzhalter: Browser-/native Benachrichtigung läuft an anderer Stelle.
     return
 
-def _ensure_trip_structures(trip: dict):
+
+def _ensure_trip_structures(trip: dict) -> None:
     messages = trip.get("messages") if isinstance(trip.get("messages"), list) else []
     chat = trip.get("chat") if isinstance(trip.get("chat"), list) else []
     merged = []
     seen = set()
     for src in (messages, chat):
-        for m in src:
-            mid = m.get("id") if isinstance(m, dict) else None
-            marker = mid or str(m)
+        for msg in src:
+            mid = msg.get("id") if isinstance(msg, dict) else None
+            marker = mid or str(msg)
             if marker in seen:
                 continue
             seen.add(marker)
-            merged.append(m)
+            merged.append(msg)
     trip["messages"] = merged
     trip["chat"] = merged
     if "typing" not in trip or not isinstance(trip["typing"], dict):
@@ -90,16 +101,19 @@ def _ensure_trip_structures(trip: dict):
     if "presence" not in trip or not isinstance(trip["presence"], dict):
         trip["presence"] = {}
 
+
 def _participants_list(trip: dict) -> List[str]:
-    p = trip.get("participants", {})
-    if isinstance(p, dict):
-        return list(p.keys())
-    if isinstance(p, list):
-        return list(p)
+    participants = trip.get("participants", {})
+    if isinstance(participants, dict):
+        return list(participants.keys())
+    if isinstance(participants, list):
+        return list(participants)
     return []
+
 
 def _total_users(trip: dict) -> int:
     return max(1, len(_participants_list(trip)))
+
 
 def _compute_ticks(msg: dict, total_users: int) -> Tuple[str, str]:
     read_by = msg.get("read_by", []) or []
@@ -112,6 +126,7 @@ def _compute_ticks(msg: dict, total_users: int) -> Tuple[str, str]:
         return "✔✔", "color: gray;"
     return "✔", "color: gray;"
 
+
 def _is_visible_to_user(msg: dict, user: str, role: str) -> bool:
     to = msg.get("to")
     sender = msg.get("user")
@@ -120,6 +135,7 @@ def _is_visible_to_user(msg: dict, user: str, role: str) -> bool:
     if to in (None, "", "ALL"):
         return True
     return sender == user or to == user
+
 
 def _toggle_reaction(msg: dict, emoji: str, user: str) -> None:
     if "reactions" not in msg or not isinstance(msg["reactions"], dict):
@@ -136,7 +152,8 @@ def _toggle_reaction(msg: dict, emoji: str, user: str) -> None:
     else:
         msg["reactions"].pop(emoji, None)
 
-def _render_reactions_line(msg: dict):
+
+def _render_reactions_line(msg: dict) -> None:
     reactions = msg.get("reactions") or {}
     if not reactions:
         return
@@ -146,6 +163,33 @@ def _render_reactions_line(msg: dict):
             parts.append(f"{emoji} {len(users)}")
     if parts:
         st.caption(" · ".join(parts))
+
+
+def _render_reaction_buttons(msg: dict, trip_name: str, user: str, data: dict) -> None:
+    st.markdown(
+        """
+        <style>
+        .compact-reactions [data-testid="column"] {padding-right: 0.2rem !important;}
+        .compact-reactions .stButton > button {
+            min-height: 2rem !important;
+            padding: 0.15rem 0.35rem !important;
+            font-size: 0.95rem !important;
+            border-radius: 999px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="compact-reactions">', unsafe_allow_html=True)
+    cols = st.columns([1, 1, 1, 1, 1, 8], gap="small")
+    for idx, emoji in enumerate(REACTION_EMOJIS):
+        if cols[idx].button(emoji, key=f"rx_{trip_name}_{msg['id']}_{emoji}", use_container_width=True):
+            _toggle_reaction(msg, emoji, user)
+            save_db(data)
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+    _render_reactions_line(msg)
+
 
 # -----------------------------
 # Presence
@@ -157,18 +201,19 @@ def get_online_users(trip: dict, window_seconds: int = 20) -> List[str]:
         return []
     return sorted([u for u, ts in presence.items() if now - ts <= window_seconds])
 
+
 # -----------------------------
 # Public API
 # -----------------------------
-def render_online_bar(data: dict, trip_name: str, user: str):
+def render_online_bar(data: dict, trip_name: str, user: str) -> None:
     trip = data["trips"][trip_name]
     _ensure_trip_structures(trip)
 
-    key = f"last_presence_write_{trip_name}"
+    session_key = f"last_presence_write_{trip_name}"
     now = time.time()
-    if key not in st.session_state or now - st.session_state[key] > 10:
+    if session_key not in st.session_state or now - st.session_state[session_key] > 10:
         trip["presence"][user] = now
-        st.session_state[key] = now
+        st.session_state[session_key] = now
         save_db(data)
 
     online = get_online_users(trip, window_seconds=25)
@@ -178,7 +223,7 @@ def render_online_bar(data: dict, trip_name: str, user: str):
         st.caption("⚪ Niemand gerade online")
 
 
-def render_chat(data: dict, trip_name: str, user: str):
+def render_chat(data: dict, trip_name: str, user: str) -> None:
     trip = data["trips"][trip_name]
     _ensure_trip_structures(trip)
 
@@ -189,17 +234,17 @@ def render_chat(data: dict, trip_name: str, user: str):
     now = time.time()
     trip["typing"] = {u: ts for u, ts in trip["typing"].items() if now - ts < 7}
 
-    # sound only on new last msg from others
+    # Sound only on new last msg from others
     last_msg_id = trip["messages"][-1]["id"] if trip["messages"] else None
-    ss_key = f"last_seen_msgid_{trip_name}"
-    prev_last_id = st.session_state.get(ss_key)
+    session_key = f"last_seen_msgid_{trip_name}"
+    prev_last_id = st.session_state.get(session_key)
     if last_msg_id and prev_last_id != last_msg_id:
         last_msg = trip["messages"][-1]
         if last_msg.get("user") != user and _is_visible_to_user(last_msg, user, role):
             _play_notification_sound()
-        st.session_state[ss_key] = last_msg_id
+        st.session_state[session_key] = last_msg_id
     elif last_msg_id and prev_last_id is None:
-        st.session_state[ss_key] = last_msg_id
+        st.session_state[session_key] = last_msg_id
 
     db_dirty = False
 
@@ -218,14 +263,14 @@ def render_chat(data: dict, trip_name: str, user: str):
             if not _is_visible_to_user(msg, user, role):
                 continue
 
-            is_me = (msg.get("user") == user)
+            is_me = msg.get("user") == user
 
-            # mark read
+            # Mark read
             if not is_me and user not in msg["read_by"]:
                 msg["read_by"].append(user)
                 db_dirty = True
 
-            # clean legacy text in-place
+            # Clean legacy text in-place
             if isinstance(msg.get("text"), str):
                 cleaned = _clean_legacy_text(msg["text"])
                 if cleaned != msg["text"]:
@@ -234,17 +279,16 @@ def render_chat(data: dict, trip_name: str, user: str):
 
             time_str = _format_time_hhmm(msg.get("time", ""))
             ticks_txt, ticks_css = _compute_ticks(msg, total_users)
-
             header_name = "Ich" if is_me else msg.get("user", "Teilnehmer")
 
-            # privacy label
+            # Privacy label
             to = msg.get("to")
             privacy = ""
             if to not in (None, "", "ALL"):
-                privacy = f"🔒 Privat" if not is_me else f"🔒 Privat an **{_html.escape(str(to))}**"
+                privacy = "🔒 Privat" if not is_me else f"🔒 Privat an **{_html.escape(str(to))}**"
 
             with st.chat_message("user" if is_me else "assistant"):
-                st.markdown(f"**{_html.escape(str(header_name))}**  ", unsafe_allow_html=True)
+                st.markdown(f"**{_html.escape(str(header_name))}**", unsafe_allow_html=True)
                 st.markdown(_safe_text_for_markdown(msg.get("text", "")), unsafe_allow_html=True)
                 if privacy:
                     st.caption(privacy)
@@ -263,34 +307,17 @@ def render_chat(data: dict, trip_name: str, user: str):
 
                 if msg.get("file"):
                     try:
-                        with open(msg["file"], "rb") as f:
+                        with open(msg["file"], "rb") as file_handle:
                             st.download_button(
                                 "📎 Anhang herunterladen",
-                                data=f,
+                                data=file_handle,
                                 file_name=os.path.basename(msg["file"]),
                                 key=f"dl_{trip_name}_{msg['id']}",
                             )
                     except Exception:
                         st.caption("📎 Datei nicht gefunden")
 
-                                emojis = ["👍", "❤️", "😂", "😮", "😢"]
-                st.markdown(
-                    """
-                    <style>
-                    div[data-testid="column"] .stButton > button[kind="secondary"] {
-                        min-height: 2.2rem;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                rx_cols = st.columns([1, 1, 1, 1, 1, 8], gap="small")
-                for i, em in enumerate(emojis):
-                    if rx_cols[i].button(em, key=f"rx_{trip_name}_{msg['id']}_{em}", use_container_width=True):
-                        _toggle_reaction(msg, em, user)
-                        save_db(data)
-                        st.rerun()
-                _render_reactions_line(msg)
+                _render_reaction_buttons(msg, trip_name, user, data)
 
                 can_moderate = is_me or role == "admin"
                 if can_moderate:
@@ -338,8 +365,7 @@ def render_chat(data: dict, trip_name: str, user: str):
         save_db(data)
 
 
-
-def chat_input(data: dict, trip_name: str, user: str):
+def chat_input(data: dict, trip_name: str, user: str) -> None:
     trip = data["trips"][trip_name]
     _ensure_trip_structures(trip)
 
@@ -348,8 +374,8 @@ def chat_input(data: dict, trip_name: str, user: str):
     recipient_label = {"ALL": "🌐 Alle (öffentlich)"}
 
     with st.form(f"chat_form_{trip_name}", clear_on_submit=True):
-        a, b = st.columns([0.7, 0.3])
-        recipient = b.selectbox(
+        col_message, col_recipient = st.columns([0.7, 0.3])
+        recipient = col_recipient.selectbox(
             "Empfänger",
             options=recipients,
             format_func=lambda x: recipient_label.get(x, f"🔒 Privat an {x}"),
@@ -357,14 +383,14 @@ def chat_input(data: dict, trip_name: str, user: str):
             key=f"to_{trip_name}",
         )
 
-        col1, col2 = st.columns([0.85, 0.15])
-        text = col1.text_input(
+        col_text, col_file = st.columns([0.85, 0.15])
+        text = col_text.text_input(
             "Nachricht",
             label_visibility="collapsed",
             placeholder="Schreibe etwas…",
             key=f"txt_{trip_name}",
         )
-        file = col2.file_uploader("📎", label_visibility="collapsed", key=f"file_{trip_name}")
+        file = col_file.file_uploader("📎", label_visibility="collapsed", key=f"file_{trip_name}")
 
         if text:
             trip["typing"][user] = time.time()
@@ -372,27 +398,26 @@ def chat_input(data: dict, trip_name: str, user: str):
         send = st.form_submit_button("📨 Senden")
 
         if send and (text or file):
-            if user in trip["typing"]:
-                del trip["typing"][user]
+            trip["typing"].pop(user, None)
 
             msg_id = new_id("msg")
             file_path = None
 
             if file:
                 file_path = _safe_upload_path(msg_id, file.name)
-                with open(file_path, "wb") as f:
-                    f.write(file.getbuffer())
+                with open(file_path, "wb") as file_handle:
+                    file_handle.write(file.getbuffer())
 
             new_msg = {
-                    "id": msg_id,
-                    "user": user,
-                    "text": (text or "").strip(),
-                    "file": file_path,
-                    "time": datetime.datetime.now().isoformat(),
-                    "read_by": [user],
-                    "to": recipient if recipient != "ALL" else "ALL",
-                    "reactions": {},
-                }
+                "id": msg_id,
+                "user": user,
+                "text": (text or "").strip(),
+                "file": file_path,
+                "time": _now_iso(),
+                "read_by": [user],
+                "to": recipient if recipient != "ALL" else "ALL",
+                "reactions": {},
+            }
             trip["messages"].append(new_msg)
             trip["chat"] = trip["messages"]
             trip["presence"][user] = time.time()
