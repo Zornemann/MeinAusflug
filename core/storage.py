@@ -152,6 +152,7 @@ def _normalize_trip(key: str, trip: dict) -> dict:
     d.setdefault('street', '')
     d.setdefault('plz', '')
     d.setdefault('city', '')
+    d.setdefault('home_city', '')
     today = str(datetime.date.today())
     d.setdefault('start_date', today)
     d.setdefault('end_date', today)
@@ -259,6 +260,88 @@ def resolve_trip_key(data: dict, requested: str) -> str:
             return key
     return requested
 
+
+
+
+def save_push_token(user_name: str, trip_id: str, token: str, platform: str = "android") -> None:
+    if not token or not user_name or not trip_id:
+        return
+
+    if _cloud_enabled():
+        with _cloud_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    insert into push_tokens (user_name, trip_id, token, platform, updated_at)
+                    values (%s, %s, %s, %s, now())
+                    on conflict (token) do update
+                    set user_name = excluded.user_name,
+                        trip_id = excluded.trip_id,
+                        platform = excluded.platform,
+                        updated_at = now();
+                """, (user_name, trip_id, token, platform))
+            conn.commit()
+        return
+
+    # local fallback: simple JSON sidecar
+    local_file = os.path.join(os.path.dirname(DB_FILE) or ".", "push_tokens.json")
+    try:
+        if os.path.exists(local_file):
+            with open(local_file, "r", encoding="utf-8") as f:
+                entries = json.load(f)
+        else:
+            entries = []
+    except Exception:
+        entries = []
+
+    entries = [e for e in entries if not (e.get("token") == token)]
+    entries.append({
+        "user_name": user_name,
+        "trip_id": trip_id,
+        "token": token,
+        "platform": platform,
+        "updated_at": datetime.datetime.now().isoformat(),
+    })
+    with open(local_file, "w", encoding="utf-8") as f:
+        json.dump(entries, f, ensure_ascii=False, indent=2)
+
+
+def get_push_tokens_for_trip(trip_id: str, exclude_user: str | None = None) -> list[str]:
+    if _cloud_enabled():
+        with _cloud_conn() as conn:
+            with conn.cursor() as cur:
+                if exclude_user:
+                    cur.execute("""
+                        select token from push_tokens
+                        where trip_id = %s and user_name <> %s
+                    """, (trip_id, exclude_user))
+                else:
+                    cur.execute("""
+                        select token from push_tokens
+                        where trip_id = %s
+                    """, (trip_id,))
+                rows = cur.fetchall() or []
+        return [r[0] for r in rows if r and r[0]]
+
+    local_file = os.path.join(os.path.dirname(DB_FILE) or ".", "push_tokens.json")
+    try:
+        if not os.path.exists(local_file):
+            return []
+        with open(local_file, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+    except Exception:
+        return []
+    tokens = []
+    for e in entries or []:
+        if not isinstance(e, dict):
+            continue
+        if e.get("trip_id") != trip_id:
+            continue
+        if exclude_user and e.get("user_name") == exclude_user:
+            continue
+        token = e.get("token")
+        if token:
+            tokens.append(token)
+    return tokens
 
 def load_db() -> dict:
     if _cloud_enabled():
