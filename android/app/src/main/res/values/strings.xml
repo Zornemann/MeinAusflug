@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MeinAusflug</string>
+    <string name="title_activity_main">MeinAusflug</string>
+    <string name="package_name">de.meinausflug.app</string>
+    <string name="custom_url_scheme">de.meinausflug.app</string>
+</resources>

@@ -1,0 +1,9 @@
+streamlit
+pandas
+Pillow
+reportlab
+requests
+geopy
+qrcode
+psycopg[binary]
+streamlit-autorefresh
