@@ -463,6 +463,72 @@ def render_trip_overview(data: dict, trip_key: str):
     _render_participant_preview(trip_key, trip)
 
 
+def _inject_capacitor_push_bridge():
+    """
+    Request browser/capacitor notification permissions when available.
+    Real native push delivery still requires Firebase setup in the Android app
+    plus server-side token storage/sending.
+    """
+    html(
+        """
+        <script>
+        (async function () {
+          try {
+            // Browser permission
+            if ("Notification" in window && Notification.permission === "default") {
+              try { await Notification.requestPermission(); } catch (e) {}
+            }
+
+            // Capacitor native bridge (available in Android app)
+            const cap = window.Capacitor;
+            const push = cap && cap.Plugins && cap.Plugins.PushNotifications;
+            if (!push) return;
+
+            try {
+              const perm = await push.checkPermissions();
+              if (!perm || perm.receive !== "granted") {
+                await push.requestPermissions();
+              }
+              await push.register();
+
+              if (!window.__meinausflugPushListenersAdded) {
+                window.__meinausflugPushListenersAdded = true;
+
+                push.addListener("registration", (token) => {
+                  try {
+                    localStorage.setItem("meinausflug_push_token", token.value || "");
+                  } catch (e) {}
+                  console.log("Push registration token available");
+                });
+
+                push.addListener("registrationError", (err) => {
+                  console.warn("Push registration error", err);
+                });
+
+                push.addListener("pushNotificationReceived", (notification) => {
+                  try {
+                    if ("Notification" in window && Notification.permission === "granted") {
+                      new Notification(notification.title || "MeinAusflug", {
+                        body: notification.body || ""
+                      });
+                    }
+                  } catch (e) {}
+                });
+              }
+            } catch (e) {
+              console.warn("Capacitor push bridge not ready", e);
+            }
+          } catch (e) {
+            console.warn("Notification bootstrap failed", e);
+          }
+        })();
+        </script>
+        """,
+        height=0,
+        key="capacitor_push_bridge",
+    )
+
+
 ensure_logged_in()
 data = load_current_data()
 apply_theme()
@@ -476,7 +542,7 @@ with st.sidebar:
     auto_refresh = st.toggle("Auto-Refresh für Benachrichtigungen", value=True, key="auto_refresh_toggle")
     if auto_refresh:
         st_autorefresh(interval=20_000, key="autorefresh_global")
-    st.caption("Browser-Benachrichtigungen werden beim ersten neuen Eintrag angefragt.")
+    st.caption("Browser-Benachrichtigungen werden beim ersten neuen Eintrag angefragt. In der Android-App wird zusätzlich die native Push-Registrierung vorbereitet.")
 
     choices = get_trip_choices(data)
     labels = [name for name, _ in choices]
