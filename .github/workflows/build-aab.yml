@@ -1,0 +1,44 @@
+name: Build Android AAB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repo auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Bubblewrap installieren
+        run: npm install -g @bubblewrap/cli
+
+      - name: Arbeitsordner anlegen
+        run: mkdir twa-build
+
+      - name: Bubblewrap initialisieren
+        working-directory: twa-build
+        run: |
+          yes "" | bubblewrap init --manifest=https://meinausflug-hevfnn78bsut8j59fu2q82.streamlit.app/app/static/manifest.json
+
+      - name: AAB bauen
+        working-directory: twa-build
+        run: bubblewrap build
+
+      - name: Artefakte hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: twa-build/**/*.aab
