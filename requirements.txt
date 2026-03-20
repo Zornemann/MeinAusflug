@@ -7,3 +7,4 @@ geopy
 qrcode
 psycopg[binary]
 streamlit-autorefresh
+google-auth>=2.38.0
