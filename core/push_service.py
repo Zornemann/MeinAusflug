@@ -3,8 +3,13 @@ import os
 from typing import Iterable
 
 import requests
-from google.auth.transport.requests import Request
-from google.oauth2 import service_account
+
+try:
+    from google.auth.transport.requests import Request
+    from google.oauth2 import service_account
+except Exception:
+    Request = None
+    service_account = None
 
 
 FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
@@ -16,34 +21,34 @@ def _load_service_account_info() -> dict | None:
         return None
     try:
         return json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT is not valid JSON.") from exc
+    except json.JSONDecodeError:
+        return None
 
 
-def _get_project_id() -> str:
+def _get_project_id() -> str | None:
     service_account_info = _load_service_account_info()
     if not service_account_info:
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT is not set.")
-    project_id = service_account_info.get("project_id")
-    if not project_id:
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT is missing project_id.")
-    return project_id
+        return None
+    return service_account_info.get("project_id")
 
 
-def _get_access_token() -> str:
+def _get_access_token() -> str | None:
+    if service_account is None or Request is None:
+        return None
+
     service_account_info = _load_service_account_info()
     if not service_account_info:
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT is not set.")
+        return None
 
-    credentials = service_account.Credentials.from_service_account_info(
-        service_account_info,
-        scopes=[FCM_SCOPE],
-    )
-    credentials.refresh(Request())
-    token = credentials.token
-    if not token:
-        raise RuntimeError("Could not obtain Firebase access token.")
-    return token
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            service_account_info,
+            scopes=[FCM_SCOPE],
+        )
+        credentials.refresh(Request())
+        return credentials.token
+    except Exception:
+        return None
 
 
 def _normalize_tokens(tokens: Iterable[str] | None) -> list[str]:
@@ -64,6 +69,8 @@ def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | 
     Send a push notification via Firebase Cloud Messaging HTTP v1.
 
     Returns a small summary dict for logging/debugging.
+    Falls Firebase/Google Auth noch nicht korrekt eingerichtet ist,
+    wird still nichts gesendet statt die ganze App abstürzen zu lassen.
     """
     normalized_tokens = _normalize_tokens(tokens)
     if not normalized_tokens:
@@ -71,6 +78,13 @@ def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | 
 
     access_token = _get_access_token()
     project_id = _get_project_id()
+
+    if not access_token or not project_id:
+        return {
+            "sent": 0,
+            "errors": [{"error": "Push not configured: missing google-auth, FIREBASE_SERVICE_ACCOUNT, or project_id"}],
+        }
+
     url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
 
     headers = {
@@ -98,6 +112,7 @@ def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | 
                 },
             }
         }
+
         if data:
             payload["message"]["data"] = {str(k): str(v) for k, v in data.items()}
 
