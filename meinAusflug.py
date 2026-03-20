@@ -96,11 +96,10 @@ def init_push_notifications(user_name: str, trip_id: str):
         </script>
         """,
         height=0,
-        key=f"push_init_{{trip_id}}_{{user_name}}",
     )
 
-
     st.session_state[state_key] = True
+
 
 manifest_path = Path("static/manifest.json")
 if st.query_params.get("manifest") == "1" and manifest_path.exists():
