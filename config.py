@@ -5,7 +5,7 @@ import os
 # ---------------------------
 APP_NAME = "MeinAusflug PRO"
 APP_URL = "https://mein-ausflug.streamlit.app"
-APP_ICON_URL = "https://github.com/Zornemann/MeinAusflug/blob/main/MeinAusflug.jpg?raw=true"
+APP_ICON_URL = os.getenv("APP_ICON_URL") or "https://raw.githubusercontent.com/Zornemann/MeinAusflug/main/MeinAusflug.jpg"
 
 # ---------------------------
 # ADMIN & SICHERHEIT

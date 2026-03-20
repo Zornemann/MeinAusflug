@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "556344595692",
+    "project_id": "meinausflug-e04fd",
+    "storage_bucket": "meinausflug-e04fd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556344595692:android:b66bfa2944613fbb57c1c9",
+        "android_client_info": {
+          "package_name": "de.meinausflug.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvUXI4kCSnnfdrEVFSuM7NPmB4tu-5Jq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
