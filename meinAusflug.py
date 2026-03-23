@@ -1,35 +1,18 @@
 from __future__ import annotations
 
-import datetime
 import json
-import urllib.parse
 from pathlib import Path
 
-import requests
 import streamlit as st
-from streamlit.components.v1 import html
-from streamlit_autorefresh import st_autorefresh
 
-from app.chat_engine import render_online_bar
-from app.theme import apply_theme
-from core.config import APP_NAME, APP_URL
-from core.storage import get_storage_status, load_db, normalize_data, save_db, save_push_token
-from ui.ui_chat import render_chat
-from ui.ui_checklist import render_checklist
-from ui.ui_costs import render_costs
-from ui.ui_info import render_info
-from ui.ui_photos import render_photos
+from core.config import APP_NAME
+from core.storage import save_push_token
 
 
 def init_push_notifications(user_name: str, trip_id: str):
     """
-    Temporarily disable native/browser push initialization in the web app.
-
-    Reason:
-    The injected HTML/JS push bootstrap caused white-screen / reload-loop issues
-    on Render while the web version is starting. The token-consume flow via query
-    params below remains in place, so the push setup can be re-enabled later once
-    the Capacitor-only path is separated cleanly from the web path.
+    Temporarily disabled in the web app.
+    Native push will be re-enabled later for the Capacitor build only.
     """
     return
 
@@ -40,7 +23,6 @@ if st.query_params.get("manifest") == "1" and manifest_path.exists():
     st.stop()
 
 st.set_page_config(page_title=APP_NAME, page_icon="🌍", layout="wide")
-
 
 
 def consume_push_token_from_query_params():
@@ -61,5 +43,18 @@ def consume_push_token_from_query_params():
                     del st.query_params[key]
                 except Exception:
                     pass
+
+
 consume_push_token_from_query_params()
 
+st.title(APP_NAME)
+st.success("App läuft ✅")
+
+if st.session_state.get("push_token_saved"):
+    st.info("Push-Token wurde gespeichert.")
+
+if st.session_state.get("push_token_error"):
+    st.warning(f"Push-Token konnte nicht gespeichert werden: {st.session_state['push_token_error']}")
+
+st.write("Diese Minimalversion dient zum Debuggen des weißen Bildschirms auf Render.")
+st.write("Wenn diese Seite korrekt lädt, liegt der Fehler in einem der nachgelagerten UI-Module oder im Hauptlayout.")
