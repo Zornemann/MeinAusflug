@@ -23,82 +23,15 @@ from ui.ui_photos import render_photos
 
 def init_push_notifications(user_name: str, trip_id: str):
     """
-    Registers browser/native push permissions. In a Capacitor Android app, the
-    FCM registration token is forwarded back into Streamlit via query params and
-    then stored in Supabase through save_push_token().
+    Temporarily disable native/browser push initialization in the web app.
+
+    Reason:
+    The injected HTML/JS push bootstrap caused white-screen / reload-loop issues
+    on Render while the web version is starting. The token-consume flow via query
+    params below remains in place, so the push setup can be re-enabled later once
+    the Capacitor-only path is separated cleanly from the web path.
     """
-    state_key = f"push_init_done_{trip_id}_{user_name}"
-    if st.session_state.get(state_key):
-        return
-
-    payload = json.dumps({"user_name": user_name, "trip_id": trip_id})
-    html(
-        f"""
-        <script>
-        (async function () {{
-          try {{
-            if ("Notification" in window && Notification.permission === "default") {{
-              try {{ await Notification.requestPermission(); }} catch (e) {{}}
-            }}
-
-            const cap = window.Capacitor;
-            const push = cap && cap.Plugins && cap.Plugins.PushNotifications;
-            if (!push) return;
-
-            let perm = await push.checkPermissions();
-            if (!perm || perm.receive === "prompt") {{
-              perm = await push.requestPermissions();
-            }}
-            if (!perm || perm.receive !== "granted") {{
-              console.log("Push permission not granted");
-              return;
-            }}
-
-            await push.register();
-
-            if (window.__meinausflugPushListenersAdded) return;
-            window.__meinausflugPushListenersAdded = true;
-
-            push.addListener("registration", (token) => {{
-              try {{
-                const u = new URL(window.parent.location.href);
-                u.searchParams.set("push_token", token.value || "");
-                u.searchParams.set("push_trip", {payload}.trip_id);
-                u.searchParams.set("push_user", {payload}.user_name);
-                u.searchParams.set("push_platform", "android");
-                window.parent.location.href = u.toString();
-              }} catch (e) {{
-                console.warn("Token redirect failed", e);
-              }}
-            }});
-
-            push.addListener("registrationError", (err) => {{
-              console.warn("Push registration error", err);
-            }});
-
-            push.addListener("pushNotificationReceived", (notification) => {{
-              try {{
-                if ("Notification" in window && Notification.permission === "granted") {{
-                  new Notification(notification.title || "MeinAusflug", {{
-                    body: notification.body || ""
-                  }});
-                }}
-              }} catch (e) {{}}
-            }});
-
-            push.addListener("pushNotificationActionPerformed", (notification) => {{
-              console.log("Push action", notification);
-            }});
-          }} catch (e) {{
-            console.warn("Push init failed", e);
-          }}
-        }})();
-        </script>
-        """,
-        height=0,
-    )
-
-    st.session_state[state_key] = True
+    return
 
 
 manifest_path = Path("static/manifest.json")
