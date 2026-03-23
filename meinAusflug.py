@@ -56,5 +56,22 @@ if st.session_state.get("push_token_saved"):
 if st.session_state.get("push_token_error"):
     st.warning(f"Push-Token konnte nicht gespeichert werden: {st.session_state['push_token_error']}")
 
-st.write("Diese Minimalversion dient zum Debuggen des weißen Bildschirms auf Render.")
-st.write("Wenn diese Seite korrekt lädt, liegt der Fehler in einem der nachgelagerten UI-Module oder im Hauptlayout.")
+st.write("Diese stabile Debug-Version stellt sicher, dass Render sauber startet.")
+st.write("Als Nächstes können die UI-Module schrittweise wieder eingebunden werden.")
+
+with st.expander("Moduldiagnose"):
+    checks = {}
+    for module_name in (
+        "app.chat_engine",
+        "ui.ui_chat",
+        "ui.ui_info",
+        "ui.ui_checklist",
+        "ui.ui_costs",
+        "ui.ui_photos",
+    ):
+        try:
+            __import__(module_name)
+            checks[module_name] = "ok"
+        except Exception as exc:
+            checks[module_name] = f"Fehler: {exc}"
+    st.json(checks)
