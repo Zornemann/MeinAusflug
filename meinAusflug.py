@@ -1,77 +1,124 @@
-from __future__ import annotations
+import datetime
+import urllib.parse
 
-import json
-from pathlib import Path
-
+import requests
 import streamlit as st
 
+from app.theme import apply_theme
 from core.config import APP_NAME
-from core.storage import save_push_token
-
-
-def init_push_notifications(user_name: str, trip_id: str):
-    """
-    Temporarily disabled in the web app.
-    Native push will be re-enabled later for the Capacitor build only.
-    """
-    return
-
-
-manifest_path = Path("static/manifest.json")
-if st.query_params.get("manifest") == "1" and manifest_path.exists():
-    st.json(json.loads(manifest_path.read_text(encoding="utf-8")))
-    st.stop()
+from core.storage import load_db, normalize_data, save_db
+from ui.ui_chat import render_chat
+from ui.ui_checklist import render_checklist
+from ui.ui_costs import render_costs
+from ui.ui_info import render_info
+from ui.ui_photos import render_photos
 
 st.set_page_config(page_title=APP_NAME, page_icon="🌍", layout="wide")
 
+apply_theme()
 
-def consume_push_token_from_query_params():
-    token = (st.query_params.get("push_token") or "").strip()
-    trip_id = (st.query_params.get("push_trip") or "").strip()
-    user_name = (st.query_params.get("push_user") or "").strip()
-    platform = (st.query_params.get("push_platform") or "android").strip()
+data = normalize_data(load_db())
 
-    if token and trip_id and user_name:
+if "user" not in st.session_state:
+    st.title("🌍 MeinAusflug")
+    name = st.text_input("Dein Name")
+    if st.button("Starten") and name.strip():
+        st.session_state.user = name.strip()
+        st.rerun()
+    st.stop()
+
+user = st.session_state.user
+
+trips = data.get("trips", {})
+
+if not trips:
+    st.warning("Noch keine Reisen vorhanden")
+    st.stop()
+
+trip_key = st.sidebar.selectbox("Reise wählen", list(trips.keys()))
+trip = trips[trip_key]
+
+participants = trip.setdefault("participants", {})
+if user not in participants:
+    participants[user] = {
+        "display_name": user,
+        "joined_at": datetime.datetime.now().isoformat(),
+    }
+    save_db(data)
+
+st.title(f"🌍 {trip.get('name', trip_key)}")
+
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    ["Übersicht", "Chat", "Checkliste", "Kosten", "Fotos", "Infos"]
+)
+
+with tab1:
+    st.subheader("📍 Reiseübersicht")
+
+    details = trip.setdefault("details", {})
+
+    destination = st.text_input("Reiseziel", details.get("destination", ""))
+    city = st.text_input("Ort", details.get("city", ""))
+
+    start = st.date_input(
+        "Start",
+        value=datetime.date.fromisoformat(
+            details.get("start_date", str(datetime.date.today()))
+        ),
+    )
+    end = st.date_input(
+        "Ende",
+        value=datetime.date.fromisoformat(
+            details.get("end_date", str(datetime.date.today()))
+        ),
+    )
+
+    details.update(
+        {
+            "destination": destination,
+            "city": city,
+            "start_date": str(start),
+            "end_date": str(end),
+        }
+    )
+    save_db(data)
+
+    if city:
         try:
-            save_push_token(user_name=user_name, trip_id=trip_id, token=token, platform=platform)
-            st.session_state["push_token_saved"] = True
-        except Exception as e:
-            st.session_state["push_token_error"] = str(e)
-        finally:
-            for key in ("push_token", "push_trip", "push_user", "push_platform"):
-                try:
-                    del st.query_params[key]
-                except Exception:
-                    pass
+            geo = requests.get(
+                f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(city)}&count=1",
+                timeout=5,
+            ).json()
 
+            if geo.get("results"):
+                lat = geo["results"][0]["latitude"]
+                lon = geo["results"][0]["longitude"]
 
-consume_push_token_from_query_params()
+                weather = requests.get(
+                    f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min",
+                    timeout=5,
+                ).json()
 
-st.title(APP_NAME)
-st.success("App läuft ✅")
+                st.subheader("🌤️ Wetter")
+                for i in range(min(3, len(weather["daily"]["time"]))):
+                    st.write(
+                        weather["daily"]["time"][i],
+                        f"{weather['daily']['temperature_2m_max'][i]}° / {weather['daily']['temperature_2m_min'][i]}°",
+                    )
+        except Exception:
+            st.info("Wetterdaten aktuell nicht verfügbar")
 
-if st.session_state.get("push_token_saved"):
-    st.info("Push-Token wurde gespeichert.")
+with tab2:
+    render_chat(data, trip_key, user)
 
-if st.session_state.get("push_token_error"):
-    st.warning(f"Push-Token konnte nicht gespeichert werden: {st.session_state['push_token_error']}")
+with tab3:
+    render_checklist(data, trip_key, user)
 
-st.write("Diese stabile Debug-Version stellt sicher, dass Render sauber startet.")
-st.write("Als Nächstes können die UI-Module schrittweise wieder eingebunden werden.")
+with tab4:
+    render_costs(data, trip_key, user)
 
-with st.expander("Moduldiagnose"):
-    checks = {}
-    for module_name in (
-        "app.chat_engine",
-        "ui.ui_chat",
-        "ui.ui_info",
-        "ui.ui_checklist",
-        "ui.ui_costs",
-        "ui.ui_photos",
-    ):
-        try:
-            __import__(module_name)
-            checks[module_name] = "ok"
-        except Exception as exc:
-            checks[module_name] = f"Fehler: {exc}"
-    st.json(checks)
+with tab5:
+    render_photos(data, trip_key)
+
+with tab6:
+    render_info(data, trip_key)
