@@ -8,50 +8,52 @@ def apply_theme() -> None:
         """
         <style>
         :root {
-          --bg: #0e1117;
-          --card: #151a21;
-          --card-2: #1b2230;
-          --text: #f4f7fb;
-          --muted: #b7c0cf;
-          --border: #2a3342;
-          --accent: #6ea8fe;
-          --accent-2: #8bb9ff;
-          --success: #8fe3b0;
-          --warning: #ffd27d;
+          --bg: #0b1020;
+          --bg-soft: #11182b;
+          --card: rgba(20, 28, 48, 0.82);
+          --card-2: rgba(27, 38, 66, 0.92);
+          --text: #f7f9fc;
+          --muted: #aeb8cc;
+          --border: rgba(130, 153, 196, 0.18);
+          --accent: #7c9cff;
+          --accent-2: #5eead4;
+          --shadow: 0 10px 30px rgba(0,0,0,.22);
+        }
+
+        .stApp {
+          background:
+            radial-gradient(circle at top left, rgba(124,156,255,.16), transparent 28%),
+            radial-gradient(circle at top right, rgba(94,234,212,.12), transparent 24%),
+            linear-gradient(180deg, #0b1020 0%, #0f172a 100%);
+          color: var(--text);
         }
 
         html, body, [class*="css"] {
           color: var(--text);
         }
 
-        .stApp {
-          background: var(--bg);
-        }
-
         .block-container {
-          padding-top: 1rem;
-          padding-bottom: 4rem;
-          max-width: 1050px;
+          max-width: 1120px;
+          padding-top: 0.7rem;
+          padding-bottom: 5rem;
         }
 
         h1, h2, h3, h4, h5, h6, p, span, label, div {
           color: var(--text);
         }
 
-        small, .stCaption, .stMarkdown p em {
-          color: var(--muted) !important;
-        }
-
         section[data-testid="stSidebar"] {
-          background: #11161d;
+          background: rgba(10, 15, 28, 0.96);
           border-right: 1px solid var(--border);
         }
 
         div[data-testid="stMetric"] {
           background: var(--card);
+          backdrop-filter: blur(8px);
           border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: 0.8rem 0.9rem;
+          box-shadow: var(--shadow);
+          border-radius: 20px;
+          padding: 0.95rem 1rem;
         }
 
         div[data-testid="stMetricLabel"] {
@@ -71,128 +73,120 @@ def apply_theme() -> None:
           background: var(--card-2) !important;
           color: var(--text) !important;
           border: 1px solid var(--border) !important;
-          border-radius: 14px !important;
+          border-radius: 16px !important;
         }
 
         input::placeholder,
         textarea::placeholder {
-          color: #98a4b8 !important;
+          color: #90a0bf !important;
           opacity: 1 !important;
         }
 
-        textarea, input {
-          font-size: 1rem !important;
-        }
-
         .stButton > button, .stDownloadButton > button, .stLinkButton > a {
-          border-radius: 14px !important;
+          border-radius: 16px !important;
           border: 1px solid var(--border) !important;
-          background: var(--card-2) !important;
+          background: linear-gradient(180deg, rgba(33,47,80,0.95), rgba(21,30,50,0.95)) !important;
           color: var(--text) !important;
-          min-height: 2.8rem;
-          font-weight: 600;
+          min-height: 2.9rem;
+          font-weight: 700;
+          box-shadow: var(--shadow);
         }
 
         .stButton > button:hover,
         .stDownloadButton > button:hover,
         .stLinkButton > a:hover {
-          border-color: var(--accent) !important;
-          color: white !important;
-        }
-
-        button[kind="primary"] {
-          background: var(--accent) !important;
-          color: #08111f !important;
+          border-color: rgba(124,156,255,.55) !important;
+          transform: translateY(-1px);
         }
 
         div[role="radiogroup"] {
-          gap: 0.4rem;
+          position: sticky;
+          top: 0.35rem;
+          z-index: 50;
+          display: flex;
+          gap: 0.55rem;
           flex-wrap: wrap;
+          padding: 0.55rem;
+          margin: 0 0 1rem 0;
+          border-radius: 20px;
+          background: rgba(13, 19, 35, 0.88);
+          backdrop-filter: blur(12px);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow);
         }
 
         div[role="radiogroup"] label {
-          background: var(--card);
-          border: 1px solid var(--border);
+          background: rgba(24, 35, 61, 0.95);
+          border: 1px solid rgba(130, 153, 196, 0.14);
           border-radius: 999px;
-          padding: 0.3rem 0.8rem;
-        }
-
-        .stTabs [data-baseweb="tab-list"] {
-          gap: 0.35rem;
-          flex-wrap: wrap;
-        }
-
-        .stTabs [data-baseweb="tab"] {
-          height: auto;
+          padding: 0.38rem 0.95rem;
           min-height: 42px;
-          border-radius: 999px;
-          padding: 0.55rem 0.9rem;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+        }
+
+        div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
+          display: none !important;
+        }
+
+        .me-card {
           background: var(--card);
-          color: var(--text);
           border: 1px solid var(--border);
+          border-radius: 22px;
+          padding: 1rem 1.05rem;
+          box-shadow: var(--shadow);
+          backdrop-filter: blur(8px);
+          margin-bottom: .85rem;
         }
 
-        .stTabs [aria-selected="true"] {
-          background: var(--accent) !important;
-          color: #08111f !important;
+        .me-soft {
+          color: var(--muted);
         }
 
-        .stAlert {
-          border-radius: 16px;
-        }
-
-        .stMarkdown code {
-          background: #121821;
-          color: #d5e6ff;
-        }
-
-        iframe {
-          border-radius: 18px !important;
+        .stAlert, iframe, .element-container .stImage img {
+          border-radius: 20px !important;
         }
 
         @media (max-width: 768px) {
           .block-container {
             padding-left: 0.8rem;
             padding-right: 0.8rem;
-            padding-top: 0.5rem;
-            padding-bottom: 5rem;
+            padding-top: 0.4rem;
+            padding-bottom: 5.5rem;
           }
 
           h1 {
             font-size: 1.55rem !important;
-            line-height: 1.2;
+            line-height: 1.18;
+            margin-bottom: 0.4rem !important;
           }
 
-          h2 {
-            font-size: 1.2rem !important;
+          div[role="radiogroup"] {
+            top: 0.2rem;
+            padding: 0.45rem;
+            gap: 0.42rem;
+            border-radius: 18px;
           }
 
-          h3 {
-            font-size: 1.05rem !important;
-          }
-
-          p, label, span, div {
-            font-size: 0.98rem;
-          }
-
-          div[data-testid="stMetric"] {
-            padding: 0.65rem 0.7rem;
-          }
-
-          div[data-testid="stMetricValue"] {
-            font-size: 1.05rem !important;
-          }
-
-          .stTabs [data-baseweb="tab"] {
-            min-height: 38px;
-            padding: 0.45rem 0.75rem;
+          div[role="radiogroup"] label {
+            min-height: 40px;
+            padding: 0.3rem 0.8rem;
             font-size: 0.92rem;
           }
 
           .stButton > button, .stDownloadButton > button, .stLinkButton > a {
             width: 100%;
-            min-height: 2.9rem;
-            font-size: 0.98rem;
+          }
+
+          div[data-testid="stMetric"] {
+            padding: 0.7rem 0.8rem;
+          }
+
+          .me-card {
+            padding: 0.85rem 0.9rem;
+            border-radius: 18px;
           }
         }
         </style>
