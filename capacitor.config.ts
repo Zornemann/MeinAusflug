@@ -4,19 +4,22 @@ const config: CapacitorConfig = {
   appId: 'de.meinausflug.app',
   appName: 'MeinAusflug',
   webDir: 'www',
-  bundledWebRuntime: false,
+  android: {
+    allowMixedContent: false,
+  },
   server: {
     url: 'https://meinausflug.onrender.com',
     cleartext: false,
-    androidScheme: 'https'
+    androidScheme: 'https',
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 1200,
-      backgroundColor: '#ffffff',
-      showSpinner: false
-    }
-  }
+      backgroundColor: '#0e1117',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+    },
+  },
 };
 
 export default config;

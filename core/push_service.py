@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 from typing import Iterable
@@ -26,23 +28,23 @@ def _load_service_account_info() -> dict | None:
 
 
 def _get_project_id() -> str | None:
-    service_account_info = _load_service_account_info()
-    if not service_account_info:
+    info = _load_service_account_info()
+    if not info:
         return None
-    return service_account_info.get("project_id")
+    return info.get("project_id")
 
 
 def _get_access_token() -> str | None:
     if service_account is None or Request is None:
         return None
 
-    service_account_info = _load_service_account_info()
-    if not service_account_info:
+    info = _load_service_account_info()
+    if not info:
         return None
 
     try:
         credentials = service_account.Credentials.from_service_account_info(
-            service_account_info,
+            info,
             scopes=[FCM_SCOPE],
         )
         credentials.refresh(Request())
@@ -65,13 +67,6 @@ def _normalize_tokens(tokens: Iterable[str] | None) -> list[str]:
 
 
 def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | None = None) -> dict:
-    """
-    Send a push notification via Firebase Cloud Messaging HTTP v1.
-
-    Returns a small summary dict for logging/debugging.
-    Falls Firebase/Google Auth noch nicht korrekt eingerichtet ist,
-    wird still nichts gesendet statt die ganze App abstürzen zu lassen.
-    """
     normalized_tokens = _normalize_tokens(tokens)
     if not normalized_tokens:
         return {"sent": 0, "errors": []}
@@ -82,11 +77,10 @@ def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | 
     if not access_token or not project_id:
         return {
             "sent": 0,
-            "errors": [{"error": "Push not configured: missing google-auth, FIREBASE_SERVICE_ACCOUNT, or project_id"}],
+            "errors": [{"error": "Push not configured: missing google-auth or FIREBASE_SERVICE_ACCOUNT"}],
         }
 
     url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
-
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json; charset=UTF-8",
@@ -112,7 +106,6 @@ def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | 
                 },
             }
         }
-
         if data:
             payload["message"]["data"] = {str(k): str(v) for k, v in data.items()}
 
@@ -121,13 +114,11 @@ def send_push(tokens: Iterable[str] | None, title: str, body: str, data: dict | 
             if 200 <= resp.status_code < 300:
                 sent += 1
             else:
-                errors.append(
-                    {
-                        "token": token,
-                        "status_code": resp.status_code,
-                        "response": resp.text[:1000],
-                    }
-                )
+                errors.append({
+                    "token": token,
+                    "status_code": resp.status_code,
+                    "response": resp.text[:1000],
+                })
         except Exception as exc:
             errors.append({"token": token, "error": str(exc)})
 

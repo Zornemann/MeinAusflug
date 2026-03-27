@@ -1,94 +1,83 @@
+from __future__ import annotations
+
+import datetime
 import json
 import os
 import uuid
-import datetime
-import shutil
-from config import DB_FILE, BACKUP_FOLDER, MAX_BACKUPS
 
-# -----------------------------------------
-# EINDEUTIGE IDs (z.B. für Chat-Nachrichten oder Kosten-Einträge)
-# -----------------------------------------
-def new_id(prefix):
-    """Erzeugt eine kurze, eindeutige ID mit Zeitstempel-Anteil."""
-    return f"{prefix}_{datetime.datetime.now().strftime('%H%M%S')}_{uuid.uuid4().hex[:6]}"
+DB_FILE = os.getenv("DB_FILE", "data/reisen_daten.json")
 
-# -----------------------------------------
-# AUDIT-LOG (Wer hat was wann gemacht?)
-# -----------------------------------------
-def log_event(data, trip_name, user, event):
-    """Protokolliert Änderungen in der Reise-Datenbank."""
-    if trip_name not in data["trips"]:
-        return
-    
-    if "log" not in data["trips"][trip_name]:
-        data["trips"][trip_name]["log"] = []
 
-    data["trips"][trip_name]["log"].append({
-        "id": new_id("log"),
-        "user": user,
-        "event": event,
-        "time": datetime.datetime.now().isoformat()
-    })
-
-# -----------------------------------------
-# BACKUPS ERSTELLEN (Sicherungskopie vor dem Speichern)
-# -----------------------------------------
-def create_backup():
-    """Erstellt eine Kopie der aktuellen Datenbank im Backup-Ordner."""
-    if not os.path.exists(DB_FILE):
-        return
-
-    if not os.path.exists(BACKUP_FOLDER):
-        os.makedirs(BACKUP_FOLDER)
-
-    # Zeitstempel für Dateinamen erzeugen
-    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_file = os.path.join(BACKUP_FOLDER, f"backup_{ts}.json")
-    
-    # Sicherungskopie erstellen
-    try:
-        shutil.copy2(DB_FILE, backup_file)
-    except Exception as e:
-        print(f"Backup-Fehler: {e}")
-
-    # Alte Backups entfernen (Rotation)
-    try:
-        # Liste alle Dateien im Backup-Ordner auf und sortiere sie
-        backups = sorted([os.path.join(BACKUP_FOLDER, f) for f in os.listdir(BACKUP_FOLDER)], key=os.path.getmtime)
-        
-        # Wenn mehr Backups vorhanden sind als erlaubt, lösche die ältesten
-        if len(backups) > MAX_BACKUPS:
-            for f in backups[:-MAX_BACKUPS]:
-                os.remove(f)
-    except Exception as e:
-        print(f"Fehler bei Backup-Rotation: {e}")
-
-# -----------------------------------------
-# DATENBANK LADEN
-# -----------------------------------------
-def load_db():
-    """Lädt die JSON-Datenbank. Erstellt eine leere Struktur, falls Datei fehlt."""
+def load_db() -> dict:
     if not os.path.exists(DB_FILE):
         return {"trips": {}}
-    
     try:
         with open(DB_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (json.JSONDecodeError, Exception):
-        # Falls die Datei korrupt ist, geben wir eine leere Struktur zurück
+    except Exception:
         return {"trips": {}}
 
-# -----------------------------------------
-# DATENBANK SPEICHERN
-# -----------------------------------------
-def save_db(data):
-    """Speichert den aktuellen Stand und erstellt vorher ein Backup."""
-    # Erst Backup vom alten Stand machen
-    create_backup()
-    
-    # Dann neuen Stand schreiben
-    try:
-        with open(DB_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"Speicherfehler: {e}")
+
+def save_db(data: dict) -> None:
+    os.makedirs(os.path.dirname(DB_FILE) or ".", exist_ok=True)
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def new_id(prefix: str = "id") -> str:
+    return f"{prefix}_{uuid.uuid4().hex[:10]}"
+
+
+def normalize_data(data: dict) -> dict:
+    if not isinstance(data, dict):
+        data = {}
+    trips = data.setdefault("trips", {})
+    for trip_key, trip in trips.items():
+        if not isinstance(trip, dict):
+            trips[trip_key] = {"name": str(trip_key)}
+            trip = trips[trip_key]
+        trip.setdefault("name", trip_key)
+        trip.setdefault("participants", {})
+        trip.setdefault("messages", [])
+        trip.setdefault("tasks", [])
+        trip.setdefault("expenses", [])
+        trip.setdefault("images", [])
+        trip.setdefault("details", {})
+        trip.setdefault("last_read", {})
+        details = trip["details"]
+        details.setdefault("destination", "")
+        details.setdefault("city", "")
+        details.setdefault("street", "")
+        details.setdefault("homepage", "")
+        details.setdefault("extra", "")
+        details.setdefault("start_date", str(datetime.date.today()))
+        details.setdefault("end_date", str(datetime.date.today()))
+        details.setdefault("meet_date", str(datetime.date.today()))
+        details.setdefault("meet_time", "18:00")
+    return data
+
+
+def mark_read(trip: dict, user: str, area: str) -> None:
+    lr = trip.setdefault("last_read", {})
+    user_lr = lr.setdefault(user, {})
+    user_lr[area] = datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+def get_chat_unread_count(trip: dict, user: str) -> int:
+    last = trip.get("last_read", {}).get(user, {}).get("chat", "")
+    return sum(
+        1
+        for msg in trip.get("messages", [])
+        if isinstance(msg, dict) and msg.get("user") != user and (msg.get("time") or "") > last
+    )
+
+
+def get_checklist_unread_count(trip: dict, user: str) -> int:
+    last = trip.get("last_read", {}).get(user, {}).get("checklist", "")
+    unread = 0
+    for task in trip.get("tasks", []):
+        event_time = task.get("updated_at") or task.get("created_at") or ""
+        event_user = task.get("updated_by") or task.get("created_by") or ""
+        if event_user != user and event_time > last:
+            unread += 1
+    return unread

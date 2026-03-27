@@ -1,42 +1,66 @@
+from __future__ import annotations
+
+import datetime
 import streamlit as st
-import pandas as pd
-from storage import save_db
 
-def render_costs(data, trip_name, user):
-    trip = data["trips"][trip_name]
+from core.storage import new_id, save_db
 
-    st.header("💰 Kosten")
 
-    crew = list(trip["participants"].keys())
+def render_costs(data: dict, trip_key: str, user: str):
+    trip = data["trips"][trip_key]
+    participants = sorted(list(trip.get("participants", {}).keys()))
+    expenses = trip.setdefault("expenses", [])
 
-    # Neue Ausgabe
-    with st.expander("Neue Ausgabe"):
-        amount = st.number_input("Euro", min_value=0.0)
-        desc = st.text_input("Beschreibung")
-        if st.button("Speichern") and amount > 0:
-            trip["expenses"].append({
-                "payer": user,
-                "amount": amount,
-                "desc": desc
-            })
-            save_db(data)
-            st.experimental_rerun()
+    st.subheader("💶 Kosten")
 
-    if trip["expenses"]:
-        df = pd.DataFrame(trip["expenses"])
-        st.dataframe(df)
+    with st.expander("➕ Ausgabe hinzufügen"):
+        c1, c2 = st.columns(2)
+        with c1:
+            title = st.text_input("Bezeichnung", key=f"exp_title_{trip_key}")
+            payer = st.selectbox("Bezahlt von", participants or [user], key=f"exp_payer_{trip_key}")
+        with c2:
+            amount = st.number_input("Betrag (€)", min_value=0.0, step=1.0, key=f"exp_amount_{trip_key}")
+            shared_with = st.multiselect("Aufteilen auf", participants or [user], default=participants or [user], key=f"exp_shared_{trip_key}")
 
-        total = df["amount"].sum()
-        per_head = total / len(crew)
+        if st.button("Speichern", key=f"save_expense_{trip_key}"):
+            if title.strip() and amount > 0 and shared_with:
+                expenses.append({
+                    "id": new_id("exp"),
+                    "title": title.strip(),
+                    "payer": payer,
+                    "amount": float(amount),
+                    "shared_with": shared_with,
+                    "created_at": datetime.datetime.now().replace(microsecond=0).isoformat(),
+                })
+                save_db(data)
+                st.rerun()
 
-        st.info(f"Gesamt: {total:.2f} € • Pro Person: {per_head:.2f} €")
+    if not expenses:
+        st.info("Noch keine Kosten erfasst.")
+        return
 
-        balances = {p: -per_head for p in crew}
-        for e in trip["expenses"]:
-            balances[e["payer"]] += e["amount"]
+    for e in expenses:
+        st.write(f"**{e.get('title')}** – {e.get('amount', 0):.2f} € · bezahlt von {e.get('payer')}")
 
-        for p, b in balances.items():
-            if b >= 0:
-                st.write(f"**{p}** bekommt **{b:.2f} €**")
-            else:
-                st.write(f"**{p}** schuldet **{-b:.2f} €**")
+    balances = {p: 0.0 for p in participants}
+    for e in expenses:
+        amount = float(e.get("amount", 0) or 0)
+        payer = e.get("payer")
+        shared = e.get("shared_with", []) or participants
+        if not shared:
+            continue
+        share = amount / len(shared)
+        for person in shared:
+            balances[person] -= share
+        if payer in balances:
+            balances[payer] += amount
+
+    st.divider()
+    st.subheader("🧾 Ausgleich")
+    for person, balance in balances.items():
+        if balance > 0.01:
+            st.success(f"{person} bekommt {balance:.2f} € zurück")
+        elif balance < -0.01:
+            st.warning(f"{person} schuldet {-balance:.2f} €")
+        else:
+            st.info(f"{person} ist ausgeglichen")

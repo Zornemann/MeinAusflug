@@ -1,0 +1,18 @@
+Android / Push Hinweise
+
+1. Datei google-services.json nach:
+   android/app/google-services.json
+
+2. In Render als Environment Variable setzen:
+   FIREBASE_SERVICE_ACCOUNT = kompletter JSON-Inhalt des Firebase Service Accounts
+
+3. Danach lokal:
+   npm install
+   npx cap sync android
+   npx cap open android
+
+4. In Render muss requirements.txt enthalten:
+   google-auth>=2.38.0
+
+5. Push-Versand erfolgt über:
+   core/push_service.py
