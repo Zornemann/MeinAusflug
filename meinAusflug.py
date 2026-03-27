@@ -58,7 +58,7 @@ def get_weather_data(city: str):
             return None
         lat = geo["results"][0]["latitude"]
         lon = geo["results"][0]["longitude"]
-        weather = requests.get(
+        return requests.get(
             (
                 f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
                 "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m"
@@ -67,7 +67,6 @@ def get_weather_data(city: str):
             ),
             timeout=8,
         ).json()
-        return weather
     except Exception:
         return None
 
@@ -82,29 +81,34 @@ if "user" not in st.session_state:
     st.stop()
 
 user = st.session_state.user
-
 trips = data.get("trips", {})
 if not trips:
     st.warning("Noch keine Reisen vorhanden")
     st.stop()
 
-qp_trip = st.query_params.get("trip")
 trip_keys = list(trips.keys())
+qp_trip = st.query_params.get("trip")
 
 if "selected_trip" not in st.session_state:
     st.session_state.selected_trip = qp_trip if qp_trip in trips else trip_keys[0]
-
-if st.session_state.selected_trip not in trips:
+elif st.session_state.selected_trip not in trips:
     st.session_state.selected_trip = trip_keys[0]
 
-current_index = trip_keys.index(st.session_state.selected_trip)
+# widget state kept separate from application state
+if "trip_selector" not in st.session_state or st.session_state.trip_selector not in trips:
+    st.session_state.trip_selector = st.session_state.selected_trip
+
+def _on_trip_change():
+    st.session_state.selected_trip = st.session_state.trip_selector
 
 with st.sidebar:
     st.markdown(f"### 👋 {user}")
-    chosen_trip = st.selectbox("Reise wählen", trip_keys, index=current_index)
-    if chosen_trip != st.session_state.selected_trip:
-        st.session_state.selected_trip = chosen_trip
-        st.rerun()
+    st.selectbox(
+        "Reise wählen",
+        trip_keys,
+        key="trip_selector",
+        on_change=_on_trip_change,
+    )
 
 trip_key = st.session_state.selected_trip
 trip = trips[trip_key]
@@ -145,21 +149,21 @@ with st.sidebar:
 
 st.title(f"🌍 {trip.get('name', trip_key)}")
 
-sections = [
-    "Übersicht",
-    f"Chat{' • ' + str(chat_unread) if chat_unread else ''}",
-    f"Checkliste{' • ' + str(check_unread) if check_unread else ''}",
-    "Kosten",
-    "Fotos",
-    "Infos",
-]
-selected = st.radio("Bereich", sections, horizontal=True, label_visibility="collapsed")
-
 summary_cols = st.columns(4)
 summary_cols[0].metric("Teilnehmer", len(participants))
 summary_cols[1].metric("Nachrichten", len(trip.get("messages", [])), delta=f"{chat_unread} neu" if chat_unread else None)
 summary_cols[2].metric("Checkliste", len(trip.get("tasks", [])), delta=f"{check_unread} neu" if check_unread else None)
 summary_cols[3].metric("Kosten", f"{sum(float(e.get('amount', 0) or 0) for e in trip.get('expenses', [])):.2f} €")
+
+sections = [
+    "Übersicht",
+    f"Chat • {chat_unread}" if chat_unread else "Chat",
+    f"Checkliste • {check_unread}" if check_unread else "Checkliste",
+    "Kosten",
+    "Fotos",
+    "Infos",
+]
+selected = st.radio("Bereich", sections, horizontal=True, label_visibility="collapsed")
 
 details = trip.setdefault("details", {})
 
