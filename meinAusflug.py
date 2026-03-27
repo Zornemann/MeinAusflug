@@ -58,7 +58,6 @@ def get_weather_data(city: str):
             return None
         lat = geo["results"][0]["latitude"]
         lon = geo["results"][0]["longitude"]
-
         weather = requests.get(
             (
                 f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
@@ -90,47 +89,61 @@ if not trips:
     st.stop()
 
 qp_trip = st.query_params.get("trip")
-default_trip = qp_trip if qp_trip in trips else next(iter(trips))
 trip_keys = list(trips.keys())
-trip_key = st.sidebar.selectbox("Reise wählen", trip_keys, index=trip_keys.index(default_trip))
+
+if "selected_trip" not in st.session_state:
+    st.session_state.selected_trip = qp_trip if qp_trip in trips else trip_keys[0]
+
+if st.session_state.selected_trip not in trips:
+    st.session_state.selected_trip = trip_keys[0]
+
+current_index = trip_keys.index(st.session_state.selected_trip)
+
+with st.sidebar:
+    st.markdown(f"### 👋 {user}")
+    chosen_trip = st.selectbox("Reise wählen", trip_keys, index=current_index)
+    if chosen_trip != st.session_state.selected_trip:
+        st.session_state.selected_trip = chosen_trip
+        st.rerun()
+
+trip_key = st.session_state.selected_trip
 trip = trips[trip_key]
 
 participants = trip.setdefault("participants", {})
-participant = participants.setdefault(user, {
-    "display_name": user,
-    "role": "member",
-    "joined_at": datetime.datetime.now().isoformat(),
-})
-participant.setdefault("display_name", user)
-participant.setdefault("role", "member")
-participant.setdefault("joined_at", datetime.datetime.now().isoformat())
+participant_added = False
+if user not in participants:
+    participants[user] = {
+        "display_name": user,
+        "role": "member",
+        "joined_at": datetime.datetime.now().isoformat(),
+    }
+    participant_added = True
+else:
+    participants[user].setdefault("display_name", user)
+    participants[user].setdefault("role", "member")
+    participants[user].setdefault("joined_at", datetime.datetime.now().isoformat())
 
 trip.setdefault("details", {})
 trip.setdefault("messages", [])
 trip.setdefault("tasks", [])
 trip.setdefault("expenses", [])
 trip.setdefault("images", [])
+trip.setdefault("last_read", {})
 
-save_db(data)
+if participant_added:
+    save_db(data)
 
 role = participants.get(user, {}).get("role", "member")
 chat_unread = get_chat_unread_count(trip, user)
 check_unread = get_checklist_unread_count(trip, user)
 
 with st.sidebar:
-    st.markdown(f"### 👋 {user}")
     st.caption(f"Rolle: {role}")
     st.caption("Einladungslink und Teilnehmerverwaltung findest du unter „Infos“.")
     if st.button("Neu laden", use_container_width=True):
         st.rerun()
 
-st.title(f"🌍 {trip.get("name", trip_key)}")
-
-summary_cols = st.columns(4)
-summary_cols[0].metric("Teilnehmer", len(participants))
-summary_cols[1].metric("Nachrichten", len(trip.get("messages", [])), delta=f"{chat_unread} neu" if chat_unread else None)
-summary_cols[2].metric("Checkliste", len(trip.get("tasks", [])), delta=f"{check_unread} neu" if check_unread else None)
-summary_cols[3].metric("Kosten", f"{sum(float(e.get("amount", 0) or 0) for e in trip.get("expenses", [])):.2f} €")
+st.title(f"🌍 {trip.get('name', trip_key)}")
 
 sections = [
     "Übersicht",
@@ -142,12 +155,18 @@ sections = [
 ]
 selected = st.radio("Bereich", sections, horizontal=True, label_visibility="collapsed")
 
+summary_cols = st.columns(4)
+summary_cols[0].metric("Teilnehmer", len(participants))
+summary_cols[1].metric("Nachrichten", len(trip.get("messages", [])), delta=f"{chat_unread} neu" if chat_unread else None)
+summary_cols[2].metric("Checkliste", len(trip.get("tasks", [])), delta=f"{check_unread} neu" if check_unread else None)
+summary_cols[3].metric("Kosten", f"{sum(float(e.get('amount', 0) or 0) for e in trip.get('expenses', [])):.2f} €")
+
 details = trip.setdefault("details", {})
 
 if selected.startswith("Übersicht"):
     st.subheader("📍 Reiseübersicht")
-
     can_edit = role == "admin"
+
     c1, c2 = st.columns(2)
     with c1:
         destination = st.text_input("Reiseziel", details.get("destination", ""), disabled=not can_edit)
@@ -155,26 +174,10 @@ if selected.startswith("Übersicht"):
         street = st.text_input("Straße", details.get("street", ""), disabled=not can_edit)
         homepage = st.text_input("Homepage", details.get("homepage", ""), disabled=not can_edit)
     with c2:
-        start = st.date_input(
-            "Start",
-            value=datetime.date.fromisoformat(details.get("start_date", str(datetime.date.today()))) if details.get("start_date") else datetime.date.today(),
-            disabled=not can_edit,
-        )
-        end = st.date_input(
-            "Ende",
-            value=datetime.date.fromisoformat(details.get("end_date", str(datetime.date.today()))) if details.get("end_date") else datetime.date.today(),
-            disabled=not can_edit,
-        )
-        meet_date = st.date_input(
-            "Treffpunkt Datum",
-            value=datetime.date.fromisoformat(details.get("meet_date", str(datetime.date.today()))) if details.get("meet_date") else datetime.date.today(),
-            disabled=not can_edit,
-        )
-        meet_time = st.time_input(
-            "Treffpunkt Uhrzeit",
-            value=datetime.time.fromisoformat(details.get("meet_time", "18:00")) if details.get("meet_time") else datetime.time(18, 0),
-            disabled=not can_edit,
-        )
+        start = st.date_input("Start", value=datetime.date.fromisoformat(details.get("start_date", str(datetime.date.today()))) if details.get("start_date") else datetime.date.today(), disabled=not can_edit)
+        end = st.date_input("Ende", value=datetime.date.fromisoformat(details.get("end_date", str(datetime.date.today()))) if details.get("end_date") else datetime.date.today(), disabled=not can_edit)
+        meet_date = st.date_input("Treffpunkt Datum", value=datetime.date.fromisoformat(details.get("meet_date", str(datetime.date.today()))) if details.get("meet_date") else datetime.date.today(), disabled=not can_edit)
+        meet_time = st.time_input("Treffpunkt Uhrzeit", value=datetime.time.fromisoformat(details.get("meet_time", "18:00")) if details.get("meet_time") else datetime.time(18, 0), disabled=not can_edit)
 
     extra = st.text_area("Zusätzliche Infos", details.get("extra", ""), disabled=not can_edit)
 
@@ -195,16 +198,11 @@ if selected.startswith("Übersicht"):
         save_db(data)
 
     address = ", ".join(x for x in [street, city] if x.strip())
-    m1, m2 = st.columns(2)
-    with m1:
-        if address:
-            maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(address)}"
-            st.link_button("🗺️ Adresse in Google Maps öffnen", maps_url, use_container_width=True)
-    with m2:
-        if homepage:
-            st.link_button("🌐 Homepage öffnen", homepage, use_container_width=True)
+    if address:
+        maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(address)}"
+        st.link_button("🗺️ Adresse in Google Maps öffnen", maps_url, use_container_width=True)
 
-    st.caption(f"Treffpunkt: {meet_date.strftime("%d.%m.%Y")} um {meet_time.strftime("%H:%M")} Uhr")
+    st.caption(f"Treffpunkt: {meet_date.strftime('%d.%m.%Y')} um {meet_time.strftime('%H:%M')} Uhr")
 
     weather_city = city or destination
     weather = get_weather_data(weather_city)
@@ -222,26 +220,8 @@ if selected.startswith("Übersicht"):
                 st.metric("Gefühlt", f"{current.get('apparent_temperature', '–')}°C")
             with wc4:
                 st.metric("Wind", f"{current.get('wind_speed_10m', '–')} km/h")
-
-            daily = weather.get("daily", {})
-            cols = st.columns(7)
-            for i, date_str in enumerate(daily.get("time", [])[:7]):
-                with cols[i]:
-                    code = daily.get("weather_code", [0] * 7)[i]
-                    icon = weather_icon_from_code(code)
-                    try:
-                        label = datetime.date.fromisoformat(date_str).strftime("%a\n%d.%m.")
-                    except Exception:
-                        label = date_str
-                    st.markdown(f"**{label}**")
-                    st.markdown(f"<div style='font-size:42px;text-align:center;margin:8px 0 2px 0'>{icon}</div>", unsafe_allow_html=True)
-                    st.caption(f"Max {daily.get('temperature_2m_max', ['–'] * 7)[i]}°")
-                    st.caption(f"Min {daily.get('temperature_2m_min', ['–'] * 7)[i]}°")
-                    st.caption(f"Regen {daily.get('precipitation_probability_max', ['–'] * 7)[i]}%")
         else:
             st.info("Wetterdaten aktuell nicht verfügbar.")
-    else:
-        st.info("Trage einen Ort oder ein Reiseziel ein, damit die Wettervorschau angezeigt wird.")
 
 elif selected.startswith("Chat"):
     mark_read(trip, user, "chat")
