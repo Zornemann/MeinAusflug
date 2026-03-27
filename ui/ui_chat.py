@@ -20,26 +20,38 @@ def render_chat(data: dict, trip_key: str, user: str):
         text = msg.get("text", "")
         created = msg.get("time", "")
         mine = author == user
-        box = st.container()
-        with box:
+        bg = "#1d3a5a" if mine else "#1b2230"
+        border = "#4f8cff" if mine else "#2a3342"
+        align = "margin-left:auto;" if mine else "margin-right:auto;"
+        with st.container():
             st.markdown(
                 f"""
                 <div style="
-                    background:{'#E8F2FF' if mine else '#F5F5F5'};
-                    padding:10px 12px;
-                    border-radius:14px;
-                    margin:6px 0;
-                    border:1px solid #E0E0E0;">
-                    <div style="font-weight:600; margin-bottom:4px;">{author}</div>
-                    <div style="font-size:1rem;">{text}</div>
-                    <div style="opacity:.65; font-size:.78rem; margin-top:4px;">{created[:16].replace('T', ' ')}</div>
+                    background:{bg};
+                    color:#f4f7fb;
+                    padding:12px 14px;
+                    border-radius:16px;
+                    margin:8px 0;
+                    border:1px solid {border};
+                    max-width:860px;
+                    {align}">
+                    <div style="font-weight:700; margin-bottom:6px; font-size:0.96rem;">{author}</div>
+                    <div style="font-size:1rem; line-height:1.45; word-break:break-word;">{text}</div>
+                    <div style="opacity:.72; font-size:.78rem; margin-top:6px;">{created[:16].replace('T', ' ')}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
+    st.markdown("<div style='height:0.35rem'></div>", unsafe_allow_html=True)
+
     with st.form(f"chat_form_{trip_key}", clear_on_submit=True):
-        text = st.text_input("Nachricht", placeholder="Schreibe eine Nachricht …")
+        text = st.text_area(
+            "Nachricht",
+            placeholder="Schreibe eine Nachricht …",
+            height=110,
+            key=f"chat_textarea_{trip_key}",
+        )
         submitted = st.form_submit_button("Senden", use_container_width=True)
         if submitted and text.strip():
             messages.append(
