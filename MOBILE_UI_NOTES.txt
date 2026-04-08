@@ -1,0 +1,7 @@
+Hinweis:
+Für bessere mobile Lesbarkeit wurden Theme und Chat angepasst:
+- höhere Kontraste im Dark Mode
+- größere Buttons
+- kompaktere Tabs
+- besser lesbare Chatblasen
+- Textarea statt sehr schmalem Chat-Eingabefeld

@@ -66,18 +66,21 @@ def get_weather_data(*location_candidates: str):
             queries.append(cleaned)
 
     if not queries:
-        return None
+        return None, "Keine Ortsangabe vorhanden"
 
     headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
 
     try:
         lat = lon = None
+        chosen_query = None
+        chosen_location = None
+
         for query in queries:
             geo_response = requests.get(
                 "https://geocoding-api.open-meteo.com/v1/search",
                 params={
                     "name": query,
-                    "count": 1,
+                    "count": 3,
                     "language": "de",
                     "format": "json",
                 },
@@ -86,13 +89,25 @@ def get_weather_data(*location_candidates: str):
             )
             geo_response.raise_for_status()
             geo = geo_response.json()
-            if geo.get("results"):
-                lat = geo["results"][0]["latitude"]
-                lon = geo["results"][0]["longitude"]
+            results = geo.get("results") or []
+            if results:
+                first = results[0]
+                lat = first["latitude"]
+                lon = first["longitude"]
+                chosen_query = query
+                chosen_location = ", ".join(
+                    str(part).strip()
+                    for part in [
+                        first.get("name"),
+                        first.get("admin1"),
+                        first.get("country"),
+                    ]
+                    if part and str(part).strip()
+                )
                 break
 
         if lat is None or lon is None:
-            return None
+            return None, f"Kein Geocoding-Treffer für: {', '.join(queries)}"
 
         weather_response = requests.get(
             "https://api.open-meteo.com/v1/forecast",
@@ -108,9 +123,15 @@ def get_weather_data(*location_candidates: str):
             timeout=10,
         )
         weather_response.raise_for_status()
-        return weather_response.json()
-    except requests.RequestException:
-        return None
+        return {
+            "source_query": chosen_query,
+            "source_location": chosen_location,
+            "data": weather_response.json(),
+        }, None
+    except requests.RequestException as exc:
+        return None, f"Request-Fehler: {type(exc).__name__}: {exc}"
+    except Exception as exc:
+        return None, f"Allgemeiner Fehler: {type(exc).__name__}: {exc}"
 
 if "user" not in st.session_state:
     st.title("🌍 MeinAusflug")
@@ -237,16 +258,22 @@ if selected.startswith("Übersicht"):
     st.caption(f"Treffpunkt: {meet_date.strftime('%d.%m.%Y')} um {meet_time.strftime('%H:%M')} Uhr")
 
     weather_queries = [
-        ", ".join(x for x in [street, postal_code, city] if x.strip()),
-        ", ".join(x for x in [postal_code, city] if x.strip()),
+        " ".join(x for x in [postal_code, city] if x.strip()),
         city,
         destination,
     ]
     weather_label = _first_non_empty([city, destination, address])
-    weather = get_weather_data(*weather_queries)
+    weather_result, weather_error = get_weather_data(*weather_queries)
     if weather_label:
         st.subheader("🌤️ Wetter")
-        if weather:
+        if weather_result:
+            weather = weather_result["data"]
+            source_query = weather_result.get("source_query")
+            source_location = weather_result.get("source_location")
+            if source_query:
+                source_text = source_location or source_query
+                st.caption(f"Gefunden über: {source_text}")
+
             current = weather.get("current", {})
             current_icon = weather_icon_from_code(current.get("weather_code", 0))
             wc1, wc2, wc3, wc4 = st.columns([1.15, 1, 1, 1])
@@ -279,7 +306,7 @@ if selected.startswith("Übersicht"):
                             unsafe_allow_html=True,
                         )
         else:
-            st.info(f"Wetterdaten für {weather_label} aktuell nicht verfügbar.")
+            st.warning(weather_error or f"Wetterdaten für {weather_label} aktuell nicht verfügbar.")
 
 elif selected.startswith("Chat"):
     if chat_unread:

@@ -39,8 +39,18 @@ def render_costs(data: dict, trip_key: str, user: str):
         st.info("Noch keine Kosten erfasst.")
         return
 
+    st.markdown("### Übersicht")
     for e in expenses:
-        st.write(f"**{e.get('title')}** – {e.get('amount', 0):.2f} € · bezahlt von {e.get('payer')}")
+        st.markdown(
+            f"""
+            <div class="me-card">
+              <div style="font-weight:700;">{e.get('title')}</div>
+              <div class="me-soft">Bezahlt von {e.get('payer')}</div>
+              <div style="font-size:1.1rem; margin-top:.35rem;">{e.get('amount', 0):.2f} €</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     balances = {p: 0.0 for p in participants}
     for e in expenses:
@@ -55,7 +65,6 @@ def render_costs(data: dict, trip_key: str, user: str):
         if payer in balances:
             balances[payer] += amount
 
-    st.divider()
     st.subheader("🧾 Ausgleich")
     for person, balance in balances.items():
         if balance > 0.01:
