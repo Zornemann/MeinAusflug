@@ -48,12 +48,33 @@ def normalize_data(data: dict) -> dict:
         details.setdefault("destination", "")
         details.setdefault("city", "")
         details.setdefault("street", "")
+        details.setdefault("postal_code", "")
         details.setdefault("homepage", "")
         details.setdefault("extra", "")
         details.setdefault("start_date", str(datetime.date.today()))
         details.setdefault("end_date", str(datetime.date.today()))
         details.setdefault("meet_date", str(datetime.date.today()))
         details.setdefault("meet_time", "18:00")
+
+        for msg in trip.get("messages", []):
+            if isinstance(msg, dict):
+                msg.setdefault("id", new_id("msg"))
+                msg.setdefault("user", "Unbekannt")
+                msg.setdefault("text", "")
+                msg.setdefault("time", "")
+
+        for task in trip.get("tasks", []):
+            if isinstance(task, dict):
+                task.setdefault("id", new_id("task"))
+                task.setdefault("job", "")
+                task.setdefault("who", [])
+                task.setdefault("done", False)
+                task.setdefault("category", "Ausrüstung")
+                task.setdefault("for_all", False)
+                task.setdefault("created_at", "")
+                task.setdefault("created_by", "")
+                task.setdefault("updated_at", task.get("created_at", ""))
+                task.setdefault("updated_by", task.get("created_by", ""))
     return data
 
 
