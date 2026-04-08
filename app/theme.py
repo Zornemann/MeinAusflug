@@ -55,7 +55,6 @@ def apply_theme() -> None:
           padding: 0.95rem 1rem;
         }
 
-        /* Input wrappers */
         div[data-testid="stTextInputRoot"] > div,
         div[data-testid="stTextArea"] > div,
         div[data-testid="stNumberInput"] > div,
@@ -67,7 +66,6 @@ def apply_theme() -> None:
           border-radius: 16px !important;
         }
 
-        /* Actual fields */
         div[data-testid="stTextInputRoot"] input,
         div[data-testid="stTextArea"] textarea,
         div[data-testid="stNumberInput"] input,
@@ -103,19 +101,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        textarea:-webkit-autofill,
-        textarea:-webkit-autofill:hover,
-        textarea:-webkit-autofill:focus {
-          -webkit-text-fill-color: #f8fbff !important;
-          -webkit-box-shadow: 0 0 0px 1000px rgba(33, 47, 80, 0.96) inset !important;
-          box-shadow: 0 0 0px 1000px rgba(33, 47, 80, 0.96) inset !important;
-          transition: background-color 9999s ease-in-out 0s !important;
-          caret-color: #f8fbff !important;
-        }
-
         input::placeholder,
         textarea::placeholder {
           color: #9fb0d4 !important;
@@ -123,7 +108,6 @@ def apply_theme() -> None:
           -webkit-text-fill-color: #9fb0d4 !important;
         }
 
-        /* Select field closed state */
         div[data-baseweb="select"] *,
         div[data-baseweb="select"] svg,
         div[data-baseweb="select"] input,
@@ -135,7 +119,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Dropdown / portal container */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] *,
         [role="listbox"],
@@ -182,25 +165,11 @@ def apply_theme() -> None:
           color: #ffffff !important;
         }
 
-        [role="listbox"] [role="option"]:hover *,
-        ul[data-baseweb="menu"] li:hover *,
-        div[data-baseweb="popover"] [role="option"]:hover * {
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
-        }
-
         [role="listbox"] [role="option"][aria-selected="true"],
         ul[data-baseweb="menu"] li[aria-selected="true"],
         div[data-baseweb="popover"] [role="option"][aria-selected="true"] {
           background: rgba(124,156,255,.26) !important;
           color: #ffffff !important;
-        }
-
-        [role="listbox"] [role="option"][aria-selected="true"] *,
-        ul[data-baseweb="menu"] li[aria-selected="true"] *,
-        div[data-baseweb="popover"] [role="option"][aria-selected="true"] * {
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
         }
 
         div[data-baseweb="tag"] {
@@ -286,22 +255,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        .stButton > button:disabled *,
-        .stButton > button[disabled] *,
-        div[data-testid="stForm"] button:disabled *,
-        div[data-testid="stForm"] button[disabled] *,
-        div[data-testid="stPopoverButton"] button:disabled *,
-        div[data-testid="stPopoverButton"] button[disabled] *,
-        button[kind="secondaryFormSubmit"] *,
-        button[kind="secondaryFormSubmit"]:disabled *,
-        button[kind="secondaryFormSubmit"][disabled] * {
-          color: #e8eefc !important;
-          -webkit-text-fill-color: #e8eefc !important;
-          fill: #e8eefc !important;
-          stroke: #e8eefc !important;
-          opacity: 1 !important;
-        }
-
         /* Navigation */
         div[role="radiogroup"] {
           position: sticky;
@@ -337,7 +290,6 @@ def apply_theme() -> None:
           background: rgba(33, 47, 80, 0.98);
         }
 
-        /* active tab */
         div[role="radiogroup"] label[aria-checked="true"],
         div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] {
           background: linear-gradient(180deg, rgba(77,110,196,0.45), rgba(47,70,128,0.85)) !important;
@@ -360,12 +312,79 @@ def apply_theme() -> None:
         .me-chat-row {
           background: rgba(14, 21, 40, 0.45);
           border: 1px solid rgba(130, 153, 196, 0.10);
-          border-radius: 16px;
-          padding: 0.9rem;
-          margin-bottom: 0.8rem;
+          border-radius: 18px;
+          padding: 0.95rem;
+          margin-bottom: 0.65rem;
+        }
+
+        .me-chat-head {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          align-items: center;
+          margin-bottom: 0.55rem;
+        }
+
+        .me-chat-author {
+          font-weight: 800;
+          color: #ffffff !important;
+        }
+
+        .me-chat-text {
+          color: #f7f9fc !important;
+          line-height: 1.45;
         }
 
         .me-soft { color: var(--muted) !important; }
+
+        .me-reactions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.35rem;
+          margin-top: 0.65rem;
+          margin-bottom: 0.2rem;
+        }
+
+        .me-reaction-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.24rem 0.55rem;
+          border-radius: 999px;
+          background: rgba(124,156,255,.14);
+          border: 1px solid rgba(124,156,255,.24);
+          color: #eef4ff !important;
+          font-size: 0.84rem;
+          line-height: 1;
+        }
+
+        .me-reaction-pill.me-active {
+          background: rgba(124,156,255,.28);
+          border-color: rgba(148,173,255,.62);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+        }
+
+        .me-reaction-picker {
+          margin-top: 0.45rem;
+          padding-top: 0.55rem;
+          border-top: 1px solid rgba(130,153,196,.10);
+        }
+
+        .me-reaction-picker .stButton > button {
+          min-height: 2.15rem !important;
+          border-radius: 999px !important;
+          padding: 0.15rem 0.55rem !important;
+          font-size: 0.95rem !important;
+          background: rgba(27,38,66,.95) !important;
+          border: 1px solid rgba(130,153,196,.20) !important;
+          box-shadow: none !important;
+        }
+
+        .me-reaction-picker .stButton > button:hover {
+          background: rgba(58,79,132,.95) !important;
+          border-color: rgba(148,173,255,.52) !important;
+          transform: none !important;
+        }
 
         @media (max-width: 768px) {
           .block-container {
@@ -373,7 +392,6 @@ def apply_theme() -> None:
             padding-right: 0.8rem;
           }
 
-          /* modern mobile menu layout */
           div[role="radiogroup"] {
             display: grid !important;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -396,6 +414,17 @@ def apply_theme() -> None:
           div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] {
             transform: translateY(-1px);
             box-shadow: 0 6px 18px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08);
+          }
+
+          .me-chat-row {
+            padding: 0.8rem;
+            border-radius: 16px;
+          }
+
+          .me-chat-head {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.2rem;
           }
 
           .stButton > button,
