@@ -18,23 +18,60 @@ def apply_theme() -> None:
           --accent: #7c9cff;
           --accent-2: #5eead4;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
-        }
-
-        .stApp {
-          background:
+          --page-bg:
             radial-gradient(circle at top left, rgba(124,156,255,.16), transparent 28%),
             radial-gradient(circle at top right, rgba(94,234,212,.12), transparent 24%),
             linear-gradient(180deg, #0b1020 0%, #0f172a 100%);
+        }
+
+        html, body, [data-testid="stAppViewContainer"], .stApp, section.main {
+          background: var(--page-bg) !important;
           color: var(--text);
         }
 
-        html, body, [class*="css"] {
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        [class*="css"] {
           color: var(--text);
+        }
+
+        /* Entfernt den weißen Bereich oberhalb der App in neueren Streamlit-Versionen */
+        [data-testid="stAppViewContainer"] > .main,
+        [data-testid="stAppViewContainer"] > .main > div,
+        [data-testid="stAppViewContainer"] > .main > div > div,
+        .main .block-container {
+          background: transparent !important;
+        }
+
+        header[data-testid="stHeader"] {
+          background: transparent !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          border: 0 !important;
+          box-shadow: none !important;
+        }
+
+        [data-testid="stHeader"]::before,
+        [data-testid="stHeader"]::after {
+          display: none !important;
+          content: none !important;
+        }
+
+        div[data-testid="stToolbar"] {
+          top: 0.35rem;
+          right: 0.5rem;
+        }
+
+        div[data-testid="stDecoration"] {
+          display: none !important;
         }
 
         .block-container {
           max-width: 1120px;
-          padding-top: 0.7rem;
+          padding-top: 0 !important;
           padding-bottom: 5rem;
         }
 
@@ -43,7 +80,7 @@ def apply_theme() -> None:
         }
 
         section[data-testid="stSidebar"] {
-          background: rgba(10, 15, 28, 0.96);
+          background: rgba(10, 15, 28, 0.96) !important;
           border-right: 1px solid var(--border);
         }
 
@@ -153,7 +190,7 @@ def apply_theme() -> None:
           .block-container {
             padding-left: 0.8rem;
             padding-right: 0.8rem;
-            padding-top: 0.4rem;
+            padding-top: 0 !important;
             padding-bottom: 5.5rem;
           }
 
