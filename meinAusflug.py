@@ -57,9 +57,17 @@ def _parse_time(value: str | None) -> datetime.time:
             return datetime.time(18, 0)
 
 
-@st.cache_data(show_spinner=False, ttl=1800)
-def get_weather_data(*location_candidates: str):
-    queries = []
+def _weather_headers() -> dict[str, str]:
+    app_url = (APP_URL or "").strip()
+    user_agent = f"{APP_NAME}/1.0"
+    if app_url:
+        user_agent = f"{user_agent} ({app_url})"
+    return {"User-Agent": user_agent}
+
+
+@st.cache_data(show_spinner=False, ttl=60 * 60 * 24)
+def geocode_location(*location_candidates: str):
+    queries: list[str] = []
     for candidate in location_candidates:
         cleaned = (candidate or "").strip()
         if cleaned and cleaned not in queries:
@@ -68,13 +76,9 @@ def get_weather_data(*location_candidates: str):
     if not queries:
         return None, "Keine Ortsangabe vorhanden"
 
-    headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
+    headers = _weather_headers()
 
     try:
-        lat = lon = None
-        chosen_query = None
-        chosen_location = None
-
         for query in queries:
             geo_response = requests.get(
                 "https://geocoding-api.open-meteo.com/v1/search",
@@ -92,9 +96,6 @@ def get_weather_data(*location_candidates: str):
             results = geo.get("results") or []
             if results:
                 first = results[0]
-                lat = first["latitude"]
-                lon = first["longitude"]
-                chosen_query = query
                 chosen_location = ", ".join(
                     str(part).strip()
                     for part in [
@@ -104,34 +105,67 @@ def get_weather_data(*location_candidates: str):
                     ]
                     if part and str(part).strip()
                 )
-                break
+                return {
+                    "latitude": first["latitude"],
+                    "longitude": first["longitude"],
+                    "source_query": query,
+                    "source_location": chosen_location,
+                }, None
 
-        if lat is None or lon is None:
-            return None, f"Kein Geocoding-Treffer für: {', '.join(queries)}"
+        return None, f"Kein Geocoding-Treffer für: {', '.join(queries)}"
+    except requests.RequestException as exc:
+        return None, f"Geocoding-Fehler: {type(exc).__name__}: {exc}"
+    except Exception as exc:
+        return None, f"Allgemeiner Geocoding-Fehler: {type(exc).__name__}: {exc}"
 
+
+@st.cache_data(show_spinner=False, ttl=60 * 60)
+def fetch_weather_forecast(latitude: float, longitude: float):
+    headers = _weather_headers()
+
+    try:
         weather_response = requests.get(
             "https://api.open-meteo.com/v1/forecast",
             params={
-                "latitude": lat,
-                "longitude": lon,
+                "latitude": latitude,
+                "longitude": longitude,
                 "current": "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
                 "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
-                "forecast_days": 7,
+                "forecast_days": 3,
                 "timezone": "Europe/Berlin",
             },
             headers=headers,
             timeout=10,
         )
+
+        if weather_response.status_code == 429:
+            return None, "Wetterdienst-Limit erreicht. Bitte später erneut versuchen."
+
         weather_response.raise_for_status()
-        return {
-            "source_query": chosen_query,
-            "source_location": chosen_location,
-            "data": weather_response.json(),
-        }, None
+        return weather_response.json(), None
     except requests.RequestException as exc:
-        return None, f"Request-Fehler: {type(exc).__name__}: {exc}"
+        return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
     except Exception as exc:
-        return None, f"Allgemeiner Fehler: {type(exc).__name__}: {exc}"
+        return None, f"Allgemeiner Wetter-Fehler: {type(exc).__name__}: {exc}"
+
+
+def get_weather_data(*location_candidates: str):
+    geo_result, geo_error = geocode_location(*location_candidates)
+    if not geo_result:
+        return None, geo_error
+
+    weather_data, weather_error = fetch_weather_forecast(
+        geo_result["latitude"],
+        geo_result["longitude"],
+    )
+    if not weather_data:
+        return None, weather_error
+
+    return {
+        "source_query": geo_result.get("source_query"),
+        "source_location": geo_result.get("source_location"),
+        "data": weather_data,
+    }, None
 
 if "user" not in st.session_state:
     st.title("🌍 MeinAusflug")
