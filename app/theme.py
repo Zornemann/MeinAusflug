@@ -31,8 +31,15 @@ def apply_theme() -> None:
         header[data-testid="stHeader"] { background: transparent !important; height: 0 !important; }
         div[data-testid="stDecoration"] { display: none !important; }
 
-        .block-container { max-width: 1120px; padding-top: 0.25rem; padding-bottom: 4rem; }
-        h1, h2, h3, h4, h5, h6, p, span, label, div { color: var(--text); }
+        .block-container {
+          max-width: 1120px;
+          padding-top: 0.25rem;
+          padding-bottom: 4rem;
+        }
+
+        h1, h2, h3, h4, h5, h6, p, span, label, div {
+          color: var(--text);
+        }
 
         section[data-testid="stSidebar"] {
           background: rgba(10, 15, 28, 0.96);
@@ -47,30 +54,78 @@ def apply_theme() -> None:
           padding: 0.95rem 1rem;
         }
 
+        /* Inputs: wrapper */
         div[data-testid="stTextInputRoot"] > div,
-        div[data-testid="stTextArea"] textarea,
-        div[data-testid="stNumberInput"] input,
-        div[data-testid="stDateInput"] input,
+        div[data-testid="stTextArea"] > div,
+        div[data-testid="stNumberInput"] > div,
+        div[data-testid="stDateInput"] > div,
         div[data-baseweb="select"] > div,
-        .stTimeInput input {
+        .stTimeInput > div {
           background: var(--card-2) !important;
-          color: var(--text) !important;
           border: 1px solid var(--border) !important;
           border-radius: 16px !important;
         }
 
-        input, textarea, select {
-          color: var(--text) !important;
-          -webkit-text-fill-color: var(--text) !important;
+        /* Inputs: actual fields */
+        div[data-testid="stTextInputRoot"] input,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stNumberInput"] input,
+        div[data-testid="stDateInput"] input,
+        .stTimeInput input,
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        textarea {
+          background: var(--card-2) !important;
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          caret-color: #f8fbff !important;
+          border: none !important;
+          box-shadow: none !important;
+          opacity: 1 !important;
         }
 
-        input::placeholder, textarea::placeholder {
+        /* Disabled/read-only fields remain readable */
+        div[data-testid="stTextInputRoot"] input:disabled,
+        div[data-testid="stTextArea"] textarea:disabled,
+        div[data-testid="stNumberInput"] input:disabled,
+        div[data-testid="stDateInput"] input:disabled,
+        .stTimeInput input:disabled,
+        input[disabled],
+        textarea[disabled],
+        input[readonly],
+        textarea[readonly] {
+          background: var(--card-2) !important;
+          color: #eef4ff !important;
+          -webkit-text-fill-color: #eef4ff !important;
+          opacity: 1 !important;
+        }
+
+        /* Browser autofill fix */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus {
+          -webkit-text-fill-color: #f8fbff !important;
+          -webkit-box-shadow: 0 0 0px 1000px rgba(33, 47, 80, 0.96) inset !important;
+          box-shadow: 0 0 0px 1000px rgba(33, 47, 80, 0.96) inset !important;
+          transition: background-color 9999s ease-in-out 0s !important;
+          caret-color: #f8fbff !important;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
           color: #9fb0d4 !important;
           opacity: 1 !important;
           -webkit-text-fill-color: #9fb0d4 !important;
         }
 
-        div[data-baseweb="select"] *, div[data-baseweb="select"] svg {
+        div[data-baseweb="select"] *,
+        div[data-baseweb="select"] svg {
           color: var(--text) !important;
           fill: var(--text) !important;
           -webkit-text-fill-color: var(--text) !important;
@@ -226,7 +281,10 @@ def apply_theme() -> None:
 
         @media (max-width: 768px) {
           .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
-          .stButton > button, .stDownloadButton > button, .stLinkButton > a, div[data-testid="stForm"] button { width: 100%; }
+          .stButton > button,
+          .stDownloadButton > button,
+          .stLinkButton > a,
+          div[data-testid="stForm"] button { width: 100%; }
         }
         </style>
         """,
