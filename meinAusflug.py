@@ -228,15 +228,23 @@ check_unread = get_checklist_unread_count(trip, user)
 
 st.title(f"🌍 {trip.get('name', trip_key)}")
 
-sections = [
-    "Übersicht",
-    f"Chat{' • ' + str(chat_unread) if chat_unread else ''}",
-    f"Checkliste{' • ' + str(check_unread) if check_unread else ''}",
-    "Kosten",
-    "Fotos",
-    "Infos",
-]
-selected = st.radio("Bereich", sections, horizontal=True, label_visibility="collapsed", key="top_nav")
+section_options = ["overview", "chat", "checklist", "costs", "photos", "infos"]
+section_labels = {
+    "overview": "Übersicht",
+    "chat": f"Chat{' • ' + str(chat_unread) if chat_unread else ''}",
+    "checklist": f"Checkliste{' • ' + str(check_unread) if check_unread else ''}",
+    "costs": "Kosten",
+    "photos": "Fotos",
+    "infos": "Infos",
+}
+selected = st.radio(
+    "Bereich",
+    section_options,
+    horizontal=True,
+    label_visibility="collapsed",
+    key="top_nav",
+    format_func=lambda option: section_labels.get(option, option),
+)
 
 summary_cols = st.columns(4)
 summary_cols[0].metric("Teilnehmer", len(participants))
@@ -246,7 +254,7 @@ summary_cols[3].metric("Kosten", f"{sum(float(e.get('amount', 0) or 0) for e in 
 
 details = trip.setdefault("details", {})
 
-if selected.startswith("Übersicht"):
+if selected == "overview":
     st.subheader("📍 Reiseübersicht")
     can_edit = role == "admin"
     c1, c2 = st.columns(2)
@@ -342,22 +350,22 @@ if selected.startswith("Übersicht"):
         else:
             st.warning(weather_error or f"Wetterdaten für {weather_label} aktuell nicht verfügbar.")
 
-elif selected.startswith("Chat"):
+elif selected == "chat":
     if chat_unread:
         mark_read(trip, user, "chat")
         save_db(data)
     render_chat(data, trip_key, user)
 
-elif selected.startswith("Checkliste"):
+elif selected == "checklist":
     if check_unread:
         mark_read(trip, user, "checklist")
         save_db(data)
     render_checklist(data, trip_key, user)
 
-elif selected == "Kosten":
+elif selected == "costs":
     render_costs(data, trip_key, user)
 
-elif selected == "Fotos":
+elif selected == "photos":
     render_photos(data, trip_key)
 
 else:

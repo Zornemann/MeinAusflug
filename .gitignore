@@ -2,17 +2,29 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-
+.Python
 .env
 .venv/
 venv/
-
-uploads/
-backups/
-
-.streamlit/secrets.toml
-
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
 .DS_Store
 Thumbs.db
 
+# app data and local backups
+data/*.json
+!data/.gitkeep
+backups/
+
+# local/dev artifacts
+.git/
+node_modules/
+android/.gradle/
+android/local.properties
+ios/
 *.log
+
+# streamlit
+.streamlit/secrets.toml

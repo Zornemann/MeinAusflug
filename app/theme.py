@@ -120,6 +120,57 @@ def apply_theme() -> None:
           color: var(--text) !important;
         }
 
+        /* BaseWeb Dropdown-Menüs werden oft in ein Portal gerendert.
+           Deshalb die Menü-Container und Einträge separat sehr explizit stylen. */
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] * {
+          color: #f7f9fc !important;
+        }
+
+        ul[data-baseweb="menu"],
+        div[data-baseweb="menu"],
+        div[role="listbox"],
+        [data-testid="stSelectboxVirtualDropdown"],
+        [data-testid="stMultiSelectVirtualDropdown"] {
+          background: rgba(17, 24, 43, 0.99) !important;
+          color: #f7f9fc !important;
+          border: 1px solid rgba(130, 153, 196, 0.18) !important;
+          border-radius: 16px !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,.22) !important;
+        }
+
+        ul[data-baseweb="menu"] li,
+        ul[data-baseweb="menu"] li * ,
+        div[data-baseweb="menu"] [role="option"],
+        div[data-baseweb="menu"] [role="option"] *,
+        div[role="listbox"] [role="option"],
+        div[role="listbox"] [role="option"] *,
+        [data-testid="stSelectboxVirtualDropdown"] li,
+        [data-testid="stSelectboxVirtualDropdown"] li *,
+        [data-testid="stMultiSelectVirtualDropdown"] li,
+        [data-testid="stMultiSelectVirtualDropdown"] li * {
+          background: transparent !important;
+          color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
+        }
+
+        ul[data-baseweb="menu"] li:hover,
+        div[data-baseweb="menu"] [role="option"]:hover,
+        div[role="listbox"] [role="option"]:hover,
+        [data-testid="stSelectboxVirtualDropdown"] li:hover,
+        [data-testid="stMultiSelectVirtualDropdown"] li:hover {
+          background: rgba(124,156,255,.18) !important;
+        }
+
+        ul[data-baseweb="menu"] li[aria-selected="true"],
+        div[data-baseweb="menu"] [role="option"][aria-selected="true"],
+        div[role="listbox"] [role="option"][aria-selected="true"],
+        [data-testid="stSelectboxVirtualDropdown"] li[aria-selected="true"],
+        [data-testid="stMultiSelectVirtualDropdown"] li[aria-selected="true"] {
+          background: rgba(124,156,255,.26) !important;
+          color: #ffffff !important;
+        }
+
         div[role="listbox"] {
           background: rgba(17, 24, 43, 0.98) !important;
           border: 1px solid var(--border) !important;
@@ -146,8 +197,10 @@ def apply_theme() -> None:
         section[data-testid="stSidebar"] div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p,
         section[data-testid="stSidebar"] div[data-baseweb="select"] span,
         section[data-testid="stSidebar"] div[data-baseweb="select"] input,
-        section[data-testid="stSidebar"] div[data-baseweb="select"] div {
+        section[data-testid="stSidebar"] div[data-baseweb="select"] div,
+        section[data-testid="stSidebar"] div[data-baseweb="select"] svg {
           color: #f8fbff !important;
+          fill: #f8fbff !important;
           -webkit-text-fill-color: #f8fbff !important;
           font-weight: 600;
         }
