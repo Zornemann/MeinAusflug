@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 
 def apply_theme() -> None:
@@ -99,7 +98,6 @@ def apply_theme() -> None:
           border-radius: 16px !important;
         }
 
-        /* Selectbox / Multiselect: Wert, Placeholder, Pfeil und Dropdown lesbar machen */
         div[data-baseweb="select"] * {
           color: var(--text) !important;
         }
@@ -121,8 +119,6 @@ def apply_theme() -> None:
           color: var(--text) !important;
         }
 
-        /* BaseWeb Dropdown-Menüs werden oft in ein Portal gerendert.
-           Deshalb die Menü-Container und Einträge separat sehr explizit stylen. */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] * {
           color: #f7f9fc !important;
@@ -141,7 +137,7 @@ def apply_theme() -> None:
         }
 
         ul[data-baseweb="menu"] li,
-        ul[data-baseweb="menu"] li * ,
+        ul[data-baseweb="menu"] li *,
         div[data-baseweb="menu"] [role="option"],
         div[data-baseweb="menu"] [role="option"] *,
         div[role="listbox"] [role="option"],
@@ -172,23 +168,6 @@ def apply_theme() -> None:
           color: #ffffff !important;
         }
 
-        div[role="listbox"] {
-          background: rgba(17, 24, 43, 0.98) !important;
-          border: 1px solid var(--border) !important;
-          border-radius: 16px !important;
-          box-shadow: var(--shadow) !important;
-        }
-
-        div[role="option"] {
-          background: transparent !important;
-          color: var(--text) !important;
-        }
-
-        div[role="option"]:hover {
-          background: rgba(124,156,255,.16) !important;
-        }
-
-        /* Sidebar-Selectbox und Dropdowns stärker kontrastieren */
         section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
           background: linear-gradient(180deg, rgba(29, 42, 74, 0.98), rgba(20, 30, 53, 0.98)) !important;
           border: 1px solid rgba(130, 153, 196, 0.24) !important;
@@ -206,7 +185,6 @@ def apply_theme() -> None:
           font-weight: 600;
         }
 
-        /* Geöffnete Dropdown-Liste */
         div[role="listbox"] [role="option"] {
           color: #f7f9fc !important;
           background: transparent !important;
@@ -221,7 +199,6 @@ def apply_theme() -> None:
           color: #ffffff !important;
         }
 
-        /* MultiSelect-Tags bei "Wer bringt es mit?" */
         div[data-baseweb="tag"] {
           background: rgba(124,156,255,.18) !important;
           border: 1px solid rgba(124,156,255,.35) !important;
@@ -235,7 +212,6 @@ def apply_theme() -> None:
           fill: #f8fbff !important;
         }
 
-        /* Placeholder in Selects lesbarer machen */
         div[data-baseweb="select"] input::placeholder,
         div[data-baseweb="select"] input::-webkit-input-placeholder {
           color: #b7c4e3 !important;
@@ -259,21 +235,29 @@ def apply_theme() -> None:
           box-shadow: 0 0 0 1px rgba(124,156,255,.18) !important;
         }
 
-        .stButton > button, .stDownloadButton > button, .stLinkButton > a {
+        .stButton > button,
+        .stDownloadButton > button,
+        .stLinkButton > a,
+        button[kind],
+        button[data-testid],
+        div[data-testid="stForm"] button {
           border-radius: 16px !important;
           border: 1px solid var(--border) !important;
           background: linear-gradient(180deg, rgba(33,47,80,0.95), rgba(21,30,50,0.95)) !important;
-          color: var(--text) !important;
-          -webkit-text-fill-color: var(--text) !important;
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          text-fill-color: #f8fbff !important;
           min-height: 2.9rem;
-          font-weight: 700;
+          font-weight: 700 !important;
           box-shadow: var(--shadow);
           transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
         }
 
         .stButton > button:hover,
         .stDownloadButton > button:hover,
-        .stLinkButton > a:hover {
+        .stLinkButton > a:hover,
+        button[kind]:hover,
+        div[data-testid="stForm"] button:hover {
           border-color: rgba(124,156,255,.55) !important;
           color: #ffffff !important;
           -webkit-text-fill-color: #ffffff !important;
@@ -282,23 +266,79 @@ def apply_theme() -> None:
 
         .stButton > button:focus,
         .stDownloadButton > button:focus,
-        .stLinkButton > a:focus {
+        .stLinkButton > a:focus,
+        button[kind]:focus,
+        div[data-testid="stForm"] button:focus {
           outline: none !important;
           border-color: rgba(124,156,255,.65) !important;
           box-shadow: 0 0 0 1px rgba(124,156,255,.22), 0 10px 30px rgba(0,0,0,.22) !important;
         }
 
+        .stButton > button,
+        .stButton > button *,
+        .stDownloadButton > button,
+        .stDownloadButton > button *,
+        .stLinkButton > a,
+        .stLinkButton > a *,
+        button[kind],
+        button[kind] *,
+        button[data-testid],
+        button[data-testid] *,
+        div[data-testid="stForm"] button,
+        div[data-testid="stForm"] button *,
+        div[data-baseweb="popover"] button,
+        div[data-baseweb="popover"] button * {
+          color: #f8fbff !important;
+          fill: #f8fbff !important;
+          stroke: #f8fbff !important;
+          opacity: 1 !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          text-shadow: none !important;
+        }
+
         .stButton > button:disabled,
         .stButton > button[disabled],
         .stDownloadButton > button:disabled,
-        .stDownloadButton > button[disabled] {
+        .stDownloadButton > button[disabled],
+        div[data-testid="stForm"] .stButton > button,
+        div[data-testid="stForm"] .stButton > button:disabled,
+        div[data-testid="stForm"] .stButton > button[disabled],
+        div[data-testid="stForm"] button,
+        div[data-testid="stForm"] button:disabled,
+        div[data-testid="stForm"] button[disabled],
+        button[kind="secondaryFormSubmit"],
+        button[kind="secondaryFormSubmit"]:disabled,
+        button[kind="secondaryFormSubmit"][disabled] {
           color: #d6def2 !important;
           -webkit-text-fill-color: #d6def2 !important;
-          background: linear-gradient(180deg, rgba(50, 60, 87, 0.96), rgba(35, 45, 70, 0.96)) !important;
+          background: linear-gradient(180deg, rgba(50, 60, 87, 0.98), rgba(35, 45, 70, 0.98)) !important;
           border: 1px solid rgba(124,156,255,.24) !important;
           box-shadow: none !important;
           opacity: 1 !important;
           cursor: not-allowed !important;
+        }
+
+        .stButton > button:disabled *,
+        .stButton > button[disabled] *,
+        .stDownloadButton > button:disabled *,
+        .stDownloadButton > button[disabled] *,
+        div[data-testid="stForm"] .stButton > button *,
+        div[data-testid="stForm"] .stButton > button:disabled *,
+        div[data-testid="stForm"] .stButton > button[disabled] *,
+        div[data-testid="stForm"] button *,
+        div[data-testid="stForm"] button:disabled *,
+        div[data-testid="stForm"] button[disabled] *,
+        button[kind="secondaryFormSubmit"] *,
+        button[kind="secondaryFormSubmit"]:disabled *,
+        button[kind="secondaryFormSubmit"][disabled] *,
+        div[data-baseweb="popover"] button *,
+        div[data-baseweb="popover"] button span,
+        div[data-baseweb="popover"] button div {
+          color: #d6def2 !important;
+          fill: #d6def2 !important;
+          stroke: #d6def2 !important;
+          -webkit-text-fill-color: #d6def2 !important;
+          opacity: 1 !important;
         }
 
         div[role="radiogroup"] {
@@ -385,7 +425,10 @@ def apply_theme() -> None:
             font-size: 0.92rem;
           }
 
-          .stButton > button, .stDownloadButton > button, .stLinkButton > a {
+          .stButton > button,
+          .stDownloadButton > button,
+          .stLinkButton > a,
+          div[data-testid="stForm"] button {
             width: 100%;
           }
 
@@ -401,37 +444,4 @@ def apply_theme() -> None:
         </style>
         """,
         unsafe_allow_html=True,
-    )
-
-    components.html(
-        """
-        <script>
-        (async function () {
-          try {
-            if ('serviceWorker' in navigator) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              for (const reg of regs) {
-                try {
-                  await reg.unregister();
-                } catch (e) {}
-              }
-            }
-            if ('caches' in window) {
-              const keys = await caches.keys();
-              for (const key of keys) {
-                if (key.toLowerCase().includes('meinausflug') || key.toLowerCase().includes('shell')) {
-                  try {
-                    await caches.delete(key);
-                  } catch (e) {}
-                }
-              }
-            }
-          } catch (e) {
-            console.debug('PWA cleanup skipped', e);
-          }
-        })();
-        </script>
-        """,
-        height=0,
-        width=0,
     )
