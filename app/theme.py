@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 def apply_theme() -> None:
@@ -287,46 +288,17 @@ def apply_theme() -> None:
           box-shadow: 0 0 0 1px rgba(124,156,255,.22), 0 10px 30px rgba(0,0,0,.22) !important;
         }
 
-        .stButton > button p,
-        .stButton > button span,
-        .stButton > button div {
-          color: inherit !important;
-          -webkit-text-fill-color: inherit !important;
-          opacity: 1 !important;
-        }
-
         .stButton > button:disabled,
         .stButton > button[disabled],
         .stDownloadButton > button:disabled,
-        .stDownloadButton > button[disabled],
-        div[data-testid="stForm"] .stButton > button,
-        div[data-testid="stForm"] .stButton > button:disabled,
-        div[data-testid="stForm"] .stButton > button[disabled],
-        button[kind="secondaryFormSubmit"],
-        button[kind="secondaryFormSubmit"]:disabled,
-        button[kind="secondaryFormSubmit"][disabled] {
+        .stDownloadButton > button[disabled] {
           color: #d6def2 !important;
           -webkit-text-fill-color: #d6def2 !important;
-          background: linear-gradient(180deg, rgba(50, 60, 87, 0.98), rgba(35, 45, 70, 0.98)) !important;
+          background: linear-gradient(180deg, rgba(50, 60, 87, 0.96), rgba(35, 45, 70, 0.96)) !important;
           border: 1px solid rgba(124,156,255,.24) !important;
           box-shadow: none !important;
           opacity: 1 !important;
           cursor: not-allowed !important;
-        }
-
-        .stButton > button:disabled *,
-        .stButton > button[disabled] *,
-        div[data-testid="stForm"] .stButton > button *,
-        div[data-testid="stForm"] .stButton > button:disabled *,
-        div[data-testid="stForm"] .stButton > button[disabled] *,
-        button[kind="secondaryFormSubmit"] *,
-        button[kind="secondaryFormSubmit"]:disabled *,
-        button[kind="secondaryFormSubmit"][disabled] * {
-          color: #d6def2 !important;
-          fill: #d6def2 !important;
-          stroke: #d6def2 !important;
-          -webkit-text-fill-color: #d6def2 !important;
-          opacity: 1 !important;
         }
 
         div[role="radiogroup"] {
@@ -429,4 +401,37 @@ def apply_theme() -> None:
         </style>
         """,
         unsafe_allow_html=True,
+    )
+
+    components.html(
+        """
+        <script>
+        (async function () {
+          try {
+            if ('serviceWorker' in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              for (const reg of regs) {
+                try {
+                  await reg.unregister();
+                } catch (e) {}
+              }
+            }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              for (const key of keys) {
+                if (key.toLowerCase().includes('meinausflug') || key.toLowerCase().includes('shell')) {
+                  try {
+                    await caches.delete(key);
+                  } catch (e) {}
+                }
+              }
+            }
+          } catch (e) {
+            console.debug('PWA cleanup skipped', e);
+          }
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
     )

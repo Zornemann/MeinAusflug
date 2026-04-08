@@ -1,10 +1,10 @@
 {
   "name": "MeinAusflug PRO",
   "short_name": "MeinAusflug",
-  "description": "Reiseplanung, Chat, Checkliste, Kosten und Fotos in einer mobilen App.",
+  "description": "Reiseplanung, Chat, Checkliste, Kosten und Fotos in einer mobilen App. PWA-Cache deaktiviert.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "browser",
   "orientation": "portrait",
   "background_color": "#0e1117",
   "theme_color": "#0e1117",
