@@ -11,12 +11,11 @@ def apply_theme() -> None:
           --bg: #0b1020;
           --bg-soft: #11182b;
           --card: rgba(20, 28, 48, 0.82);
-          --card-2: rgba(27, 38, 66, 0.92);
+          --card-2: rgba(33, 47, 80, 0.96);
           --text: #f7f9fc;
           --muted: #aeb8cc;
           --border: rgba(130, 153, 196, 0.18);
           --accent: #7c9cff;
-          --accent-2: #5eead4;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
         }
 
@@ -28,62 +27,24 @@ def apply_theme() -> None:
           color: var(--text);
         }
 
-        html, body, [class*="css"] {
-          color: var(--text);
-        }
+        html, body, [class*="css"] { color: var(--text); }
+        header[data-testid="stHeader"] { background: transparent !important; height: 0 !important; }
+        div[data-testid="stDecoration"] { display: none !important; }
 
-        header[data-testid="stHeader"] {
-          background: transparent !important;
-          height: 0 !important;
-        }
-
-        div[data-testid="stToolbar"] {
-          top: 0.35rem;
-          right: 0.5rem;
-        }
-
-        div[data-testid="stDecoration"] {
-          display: none !important;
-        }
-
-        .block-container {
-          max-width: 1120px;
-          padding-top: 0.2rem;
-          padding-bottom: 5rem;
-        }
-
-        h1, h2, h3, h4, h5, h6, p, span, label, div {
-          color: var(--text);
-        }
+        .block-container { max-width: 1120px; padding-top: 0.25rem; padding-bottom: 4rem; }
+        h1, h2, h3, h4, h5, h6, p, span, label, div { color: var(--text); }
 
         section[data-testid="stSidebar"] {
           background: rgba(10, 15, 28, 0.96);
           border-right: 1px solid var(--border);
         }
 
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] .stCaption,
-        section[data-testid="stSidebar"] p,
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] div {
-          color: var(--text);
-        }
-
         div[data-testid="stMetric"] {
           background: var(--card);
-          backdrop-filter: blur(8px);
           border: 1px solid var(--border);
           box-shadow: var(--shadow);
           border-radius: 20px;
           padding: 0.95rem 1rem;
-        }
-
-        div[data-testid="stMetricLabel"] {
-          color: var(--muted);
-        }
-
-        div[data-testid="stMetricValue"] {
-          color: var(--text);
         }
 
         div[data-testid="stTextInputRoot"] > div,
@@ -98,246 +59,126 @@ def apply_theme() -> None:
           border-radius: 16px !important;
         }
 
-        div[data-baseweb="select"] * {
+        input, textarea, select {
           color: var(--text) !important;
-        }
-
-        div[data-baseweb="select"] input {
           -webkit-text-fill-color: var(--text) !important;
-          color: var(--text) !important;
-          caret-color: var(--text) !important;
         }
 
-        div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p,
-        div[data-baseweb="select"] span,
-        div[data-baseweb="select"] div {
-          color: var(--text) !important;
+        input::placeholder, textarea::placeholder {
+          color: #9fb0d4 !important;
+          opacity: 1 !important;
+          -webkit-text-fill-color: #9fb0d4 !important;
         }
 
-        div[data-baseweb="select"] svg {
+        div[data-baseweb="select"] *, div[data-baseweb="select"] svg {
+          color: var(--text) !important;
           fill: var(--text) !important;
-          color: var(--text) !important;
+          -webkit-text-fill-color: var(--text) !important;
         }
 
         div[data-baseweb="popover"],
-        div[data-baseweb="popover"] * {
+        div[data-baseweb="popover"] *,
+        ul[data-baseweb="menu"],
+        ul[data-baseweb="menu"] *,
+        div[role="listbox"],
+        div[role="listbox"] * {
           color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
         }
 
         ul[data-baseweb="menu"],
-        div[data-baseweb="menu"],
-        div[role="listbox"],
-        [data-testid="stSelectboxVirtualDropdown"],
-        [data-testid="stMultiSelectVirtualDropdown"] {
+        div[role="listbox"] {
           background: rgba(17, 24, 43, 0.99) !important;
-          color: #f7f9fc !important;
           border: 1px solid rgba(130, 153, 196, 0.18) !important;
           border-radius: 16px !important;
           box-shadow: 0 10px 30px rgba(0,0,0,.22) !important;
         }
 
-        ul[data-baseweb="menu"] li,
-        ul[data-baseweb="menu"] li *,
-        div[data-baseweb="menu"] [role="option"],
-        div[data-baseweb="menu"] [role="option"] *,
-        div[role="listbox"] [role="option"],
-        div[role="listbox"] [role="option"] *,
-        [data-testid="stSelectboxVirtualDropdown"] li,
-        [data-testid="stSelectboxVirtualDropdown"] li *,
-        [data-testid="stMultiSelectVirtualDropdown"] li,
-        [data-testid="stMultiSelectVirtualDropdown"] li * {
-          background: transparent !important;
-          color: #f7f9fc !important;
-          -webkit-text-fill-color: #f7f9fc !important;
-        }
-
-        ul[data-baseweb="menu"] li:hover,
-        div[data-baseweb="menu"] [role="option"]:hover,
         div[role="listbox"] [role="option"]:hover,
-        [data-testid="stSelectboxVirtualDropdown"] li:hover,
-        [data-testid="stMultiSelectVirtualDropdown"] li:hover {
+        ul[data-baseweb="menu"] li:hover {
           background: rgba(124,156,255,.18) !important;
         }
 
-        ul[data-baseweb="menu"] li[aria-selected="true"],
-        div[data-baseweb="menu"] [role="option"][aria-selected="true"],
-        div[role="listbox"] [role="option"][aria-selected="true"],
-        [data-testid="stSelectboxVirtualDropdown"] li[aria-selected="true"],
-        [data-testid="stMultiSelectVirtualDropdown"] li[aria-selected="true"] {
-          background: rgba(124,156,255,.26) !important;
-          color: #ffffff !important;
-        }
-
-        section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-          background: linear-gradient(180deg, rgba(29, 42, 74, 0.98), rgba(20, 30, 53, 0.98)) !important;
-          border: 1px solid rgba(130, 153, 196, 0.24) !important;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-        }
-
-        section[data-testid="stSidebar"] div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p,
-        section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-        section[data-testid="stSidebar"] div[data-baseweb="select"] input,
-        section[data-testid="stSidebar"] div[data-baseweb="select"] div,
-        section[data-testid="stSidebar"] div[data-baseweb="select"] svg {
-          color: #f8fbff !important;
-          fill: #f8fbff !important;
-          -webkit-text-fill-color: #f8fbff !important;
-          font-weight: 600;
-        }
-
-        div[role="listbox"] [role="option"] {
-          color: #f7f9fc !important;
-          background: transparent !important;
-          border-radius: 12px;
-          margin: 0.15rem 0.3rem;
-          padding-top: 0.45rem !important;
-          padding-bottom: 0.45rem !important;
-        }
-
-        div[role="listbox"] [role="option"][aria-selected="true"] {
-          background: rgba(124,156,255,.24) !important;
-          color: #ffffff !important;
-        }
-
-        div[data-baseweb="tag"] {
-          background: rgba(124,156,255,.18) !important;
-          border: 1px solid rgba(124,156,255,.35) !important;
-          border-radius: 999px !important;
-        }
-
-        div[data-baseweb="tag"] span,
-        div[data-baseweb="tag"] div,
-        div[data-baseweb="tag"] svg {
-          color: #f8fbff !important;
-          fill: #f8fbff !important;
-        }
-
-        div[data-baseweb="select"] input::placeholder,
-        div[data-baseweb="select"] input::-webkit-input-placeholder {
-          color: #b7c4e3 !important;
-          -webkit-text-fill-color: #b7c4e3 !important;
-          opacity: 1 !important;
-        }
-
-        input::placeholder,
-        textarea::placeholder {
-          color: #90a0bf !important;
-          opacity: 1 !important;
-        }
-
-        div[data-testid="stTextInputRoot"] input:focus,
-        div[data-testid="stTextArea"] textarea:focus,
-        div[data-testid="stNumberInput"] input:focus,
-        div[data-testid="stDateInput"] input:focus,
-        .stTimeInput input:focus,
-        div[data-baseweb="select"] input:focus {
-          border-color: rgba(124,156,255,.55) !important;
-          box-shadow: 0 0 0 1px rgba(124,156,255,.18) !important;
+        div[data-testid="stForm"] {
+          background: rgba(10, 16, 31, 0.34);
+          border: 1px solid rgba(130, 153, 196, 0.08);
+          border-radius: 18px;
+          padding: 0.35rem 0.35rem 0.85rem 0.35rem;
         }
 
         .stButton > button,
         .stDownloadButton > button,
         .stLinkButton > a,
+        div[data-testid="stForm"] button,
+        div[data-testid="stPopoverButton"] button,
         button[kind],
-        button[data-testid],
-        div[data-testid="stForm"] button {
+        button[data-testid] {
+          background: linear-gradient(180deg, rgba(33,47,80,0.98), rgba(21,30,50,0.98)) !important;
+          border: 1px solid rgba(124,156,255,.32) !important;
           border-radius: 16px !important;
-          border: 1px solid var(--border) !important;
-          background: linear-gradient(180deg, rgba(33,47,80,0.95), rgba(21,30,50,0.95)) !important;
+          min-height: 2.85rem;
           color: #f8fbff !important;
           -webkit-text-fill-color: #f8fbff !important;
-          text-fill-color: #f8fbff !important;
-          min-height: 2.9rem;
+          fill: #f8fbff !important;
+          stroke: #f8fbff !important;
           font-weight: 700 !important;
+          opacity: 1 !important;
           box-shadow: var(--shadow);
-          transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        }
+
+        .stButton > button *,
+        .stDownloadButton > button *,
+        .stLinkButton > a *,
+        div[data-testid="stForm"] button *,
+        div[data-testid="stPopoverButton"] button *,
+        button[kind] *,
+        button[data-testid] * {
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          fill: #f8fbff !important;
+          stroke: #f8fbff !important;
+          opacity: 1 !important;
         }
 
         .stButton > button:hover,
         .stDownloadButton > button:hover,
         .stLinkButton > a:hover,
-        button[kind]:hover,
-        div[data-testid="stForm"] button:hover {
-          border-color: rgba(124,156,255,.55) !important;
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
+        div[data-testid="stForm"] button:hover,
+        div[data-testid="stPopoverButton"] button:hover,
+        button[kind]:hover {
+          border-color: rgba(124,156,255,.58) !important;
           transform: translateY(-1px);
-        }
-
-        .stButton > button:focus,
-        .stDownloadButton > button:focus,
-        .stLinkButton > a:focus,
-        button[kind]:focus,
-        div[data-testid="stForm"] button:focus {
-          outline: none !important;
-          border-color: rgba(124,156,255,.65) !important;
-          box-shadow: 0 0 0 1px rgba(124,156,255,.22), 0 10px 30px rgba(0,0,0,.22) !important;
-        }
-
-        .stButton > button,
-        .stButton > button *,
-        .stDownloadButton > button,
-        .stDownloadButton > button *,
-        .stLinkButton > a,
-        .stLinkButton > a *,
-        button[kind],
-        button[kind] *,
-        button[data-testid],
-        button[data-testid] *,
-        div[data-testid="stForm"] button,
-        div[data-testid="stForm"] button *,
-        div[data-baseweb="popover"] button,
-        div[data-baseweb="popover"] button * {
-          color: #f8fbff !important;
-          fill: #f8fbff !important;
-          stroke: #f8fbff !important;
-          opacity: 1 !important;
-          -webkit-text-fill-color: #f8fbff !important;
-          text-shadow: none !important;
         }
 
         .stButton > button:disabled,
         .stButton > button[disabled],
-        .stDownloadButton > button:disabled,
-        .stDownloadButton > button[disabled],
-        div[data-testid="stForm"] .stButton > button,
-        div[data-testid="stForm"] .stButton > button:disabled,
-        div[data-testid="stForm"] .stButton > button[disabled],
-        div[data-testid="stForm"] button,
         div[data-testid="stForm"] button:disabled,
         div[data-testid="stForm"] button[disabled],
+        div[data-testid="stPopoverButton"] button:disabled,
+        div[data-testid="stPopoverButton"] button[disabled],
         button[kind="secondaryFormSubmit"],
         button[kind="secondaryFormSubmit"]:disabled,
         button[kind="secondaryFormSubmit"][disabled] {
-          color: #d6def2 !important;
-          -webkit-text-fill-color: #d6def2 !important;
-          background: linear-gradient(180deg, rgba(50, 60, 87, 0.98), rgba(35, 45, 70, 0.98)) !important;
-          border: 1px solid rgba(124,156,255,.24) !important;
-          box-shadow: none !important;
+          background: linear-gradient(180deg, rgba(53, 65, 94, 0.98), rgba(38, 49, 75, 0.98)) !important;
+          color: #e8eefc !important;
+          -webkit-text-fill-color: #e8eefc !important;
+          border: 1px solid rgba(124,156,255,.28) !important;
           opacity: 1 !important;
-          cursor: not-allowed !important;
         }
 
         .stButton > button:disabled *,
         .stButton > button[disabled] *,
-        .stDownloadButton > button:disabled *,
-        .stDownloadButton > button[disabled] *,
-        div[data-testid="stForm"] .stButton > button *,
-        div[data-testid="stForm"] .stButton > button:disabled *,
-        div[data-testid="stForm"] .stButton > button[disabled] *,
-        div[data-testid="stForm"] button *,
         div[data-testid="stForm"] button:disabled *,
         div[data-testid="stForm"] button[disabled] *,
+        div[data-testid="stPopoverButton"] button:disabled *,
+        div[data-testid="stPopoverButton"] button[disabled] *,
         button[kind="secondaryFormSubmit"] *,
         button[kind="secondaryFormSubmit"]:disabled *,
-        button[kind="secondaryFormSubmit"][disabled] *,
-        div[data-baseweb="popover"] button *,
-        div[data-baseweb="popover"] button span,
-        div[data-baseweb="popover"] button div {
-          color: #d6def2 !important;
-          fill: #d6def2 !important;
-          stroke: #d6def2 !important;
-          -webkit-text-fill-color: #d6def2 !important;
+        button[kind="secondaryFormSubmit"][disabled] * {
+          color: #e8eefc !important;
+          -webkit-text-fill-color: #e8eefc !important;
+          fill: #e8eefc !important;
+          stroke: #e8eefc !important;
           opacity: 1 !important;
         }
 
@@ -373,73 +214,19 @@ def apply_theme() -> None:
           display: none !important;
         }
 
-        .me-card {
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 22px;
-          padding: 1rem 1.05rem;
-          box-shadow: var(--shadow);
-          backdrop-filter: blur(8px);
-          margin-bottom: .85rem;
+        .me-chat-row {
+          background: rgba(14, 21, 40, 0.45);
+          border: 1px solid rgba(130, 153, 196, 0.10);
+          border-radius: 16px;
+          padding: 0.9rem;
+          margin-bottom: 0.8rem;
         }
 
-        .me-soft {
-          color: var(--muted);
-        }
-
-        .stAlert, iframe, .element-container .stImage img {
-          border-radius: 20px !important;
-        }
-
-        div[data-testid="stForm"] {
-          background: rgba(10, 16, 31, 0.34);
-          border: 1px solid rgba(130, 153, 196, 0.08);
-          border-radius: 18px;
-          padding: 0.3rem 0.3rem 0.8rem 0.3rem;
-        }
+        .me-soft { color: var(--muted) !important; }
 
         @media (max-width: 768px) {
-          .block-container {
-            padding-left: 0.8rem;
-            padding-right: 0.8rem;
-            padding-top: 0.4rem;
-            padding-bottom: 5.5rem;
-          }
-
-          h1 {
-            font-size: 1.55rem !important;
-            line-height: 1.18;
-            margin-bottom: 0.4rem !important;
-          }
-
-          div[role="radiogroup"] {
-            top: 0.2rem;
-            padding: 0.45rem;
-            gap: 0.42rem;
-            border-radius: 18px;
-          }
-
-          div[role="radiogroup"] label {
-            min-height: 40px;
-            padding: 0.3rem 0.8rem;
-            font-size: 0.92rem;
-          }
-
-          .stButton > button,
-          .stDownloadButton > button,
-          .stLinkButton > a,
-          div[data-testid="stForm"] button {
-            width: 100%;
-          }
-
-          div[data-testid="stMetric"] {
-            padding: 0.7rem 0.8rem;
-          }
-
-          .me-card {
-            padding: 0.85rem 0.9rem;
-            border-radius: 18px;
-          }
+          .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
+          .stButton > button, .stDownloadButton > button, .stLinkButton > a, div[data-testid="stForm"] button { width: 100%; }
         }
         </style>
         """,

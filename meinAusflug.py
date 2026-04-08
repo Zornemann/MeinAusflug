@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import datetime
-import urllib.parse
 from typing import Iterable
+import urllib.parse
 
 import requests
 import streamlit as st
@@ -27,6 +27,7 @@ st.set_page_config(page_title=APP_NAME, page_icon="🌍", layout="wide")
 apply_theme()
 data = normalize_data(load_db())
 
+
 def weather_icon_from_code(code: int) -> str:
     mapping = {
         0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
@@ -39,92 +40,61 @@ def weather_icon_from_code(code: int) -> str:
     return mapping.get(int(code), "🌡️")
 
 
-def _first_non_empty(values: Iterable[str]) -> str:
-    for value in values:
-        if value and str(value).strip():
-            return str(value).strip()
-    return ""
-
-
-def _parse_time(value: str | None) -> datetime.time:
-    raw = (value or "18:00").strip()
+def _parse_time(raw: str) -> datetime.time:
     try:
         return datetime.time.fromisoformat(raw)
-    except ValueError:
-        try:
-            return datetime.datetime.strptime(raw, "%H:%M").time()
-        except ValueError:
-            return datetime.time(18, 0)
+    except Exception:
+        return datetime.time(18, 0)
 
 
-def _weather_headers() -> dict[str, str]:
-    app_url = (APP_URL or "").strip()
-    user_agent = f"{APP_NAME}/1.0"
-    if app_url:
-        user_agent = f"{user_agent} ({app_url})"
-    return {"User-Agent": user_agent}
+def _clean_candidates(candidates: Iterable[str]) -> list[str]:
+    seen: list[str] = []
+    for candidate in candidates:
+        value = (candidate or "").strip()
+        if value and value not in seen:
+            seen.append(value)
+    return seen
 
 
-@st.cache_data(show_spinner=False, ttl=60 * 60 * 24)
+@st.cache_data(show_spinner=False, ttl=86400)
 def geocode_location(*location_candidates: str):
-    queries: list[str] = []
-    for candidate in location_candidates:
-        cleaned = (candidate or "").strip()
-        if cleaned and cleaned not in queries:
-            queries.append(cleaned)
-
+    queries = _clean_candidates(location_candidates)
     if not queries:
         return None, "Keine Ortsangabe vorhanden"
 
-    headers = _weather_headers()
+    headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
 
     try:
         for query in queries:
-            geo_response = requests.get(
+            response = requests.get(
                 "https://geocoding-api.open-meteo.com/v1/search",
-                params={
-                    "name": query,
-                    "count": 3,
-                    "language": "de",
-                    "format": "json",
-                },
+                params={"name": query, "count": 1, "language": "de", "format": "json"},
                 headers=headers,
                 timeout=10,
             )
-            geo_response.raise_for_status()
-            geo = geo_response.json()
-            results = geo.get("results") or []
+            response.raise_for_status()
+            payload = response.json()
+            results = payload.get("results") or []
             if results:
                 first = results[0]
-                chosen_location = ", ".join(
-                    str(part).strip()
-                    for part in [
-                        first.get("name"),
-                        first.get("admin1"),
-                        first.get("country"),
-                    ]
-                    if part and str(part).strip()
-                )
                 return {
+                    "query": query,
                     "latitude": first["latitude"],
                     "longitude": first["longitude"],
-                    "source_query": query,
-                    "source_location": chosen_location,
+                    "label": first.get("name", query),
                 }, None
-
-        return None, f"Kein Geocoding-Treffer für: {', '.join(queries)}"
+        return None, f"Kein Geocoding-Treffer für: {queries}"
     except requests.RequestException as exc:
         return None, f"Geocoding-Fehler: {type(exc).__name__}: {exc}"
     except Exception as exc:
-        return None, f"Allgemeiner Geocoding-Fehler: {type(exc).__name__}: {exc}"
+        return None, f"Geocoding-Fehler: {type(exc).__name__}: {exc}"
 
 
-@st.cache_data(show_spinner=False, ttl=60 * 60)
-def fetch_weather_forecast(latitude: float, longitude: float):
-    headers = _weather_headers()
-
+@st.cache_data(show_spinner=False, ttl=3600)
+def get_weather_forecast(latitude: float, longitude: float):
+    headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
     try:
-        weather_response = requests.get(
+        response = requests.get(
             "https://api.open-meteo.com/v1/forecast",
             params={
                 "latitude": latitude,
@@ -137,35 +107,15 @@ def fetch_weather_forecast(latitude: float, longitude: float):
             headers=headers,
             timeout=10,
         )
-
-        if weather_response.status_code == 429:
-            return None, "Wetterdienst-Limit erreicht. Bitte später erneut versuchen."
-
-        weather_response.raise_for_status()
-        return weather_response.json(), None
+        if response.status_code == 429:
+            return None, "Wetterdienst hat das Limit erreicht. Bitte später erneut versuchen."
+        response.raise_for_status()
+        return response.json(), None
     except requests.RequestException as exc:
         return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
     except Exception as exc:
-        return None, f"Allgemeiner Wetter-Fehler: {type(exc).__name__}: {exc}"
+        return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
 
-
-def get_weather_data(*location_candidates: str):
-    geo_result, geo_error = geocode_location(*location_candidates)
-    if not geo_result:
-        return None, geo_error
-
-    weather_data, weather_error = fetch_weather_forecast(
-        geo_result["latitude"],
-        geo_result["longitude"],
-    )
-    if not weather_data:
-        return None, weather_error
-
-    return {
-        "source_query": geo_result.get("source_query"),
-        "source_location": geo_result.get("source_location"),
-        "data": weather_data,
-    }, None
 
 if "user" not in st.session_state:
     st.title("🌍 MeinAusflug")
@@ -197,7 +147,6 @@ with st.sidebar:
         st.rerun()
 
 trip = trips[trip_key]
-
 participants = trip.setdefault("participants", {})
 needs_save = False
 if user not in participants:
@@ -228,23 +177,28 @@ check_unread = get_checklist_unread_count(trip, user)
 
 st.title(f"🌍 {trip.get('name', trip_key)}")
 
-section_options = ["overview", "chat", "checklist", "costs", "photos", "infos"]
-section_labels = {
-    "overview": "Übersicht",
-    "chat": f"Chat{' • ' + str(chat_unread) if chat_unread else ''}",
-    "checklist": f"Checkliste{' • ' + str(check_unread) if check_unread else ''}",
-    "costs": "Kosten",
-    "photos": "Fotos",
-    "infos": "Infos",
-}
-selected = st.radio(
+nav_items = [
+    ("overview", "Übersicht"),
+    ("chat", "Chat"),
+    ("checklist", "Checkliste"),
+    ("costs", "Kosten"),
+    ("photos", "Fotos"),
+    ("infos", "Infos"),
+]
+nav_labels = [label for _, label in nav_items]
+nav_map = {label: key for key, label in nav_items}
+current_key = st.session_state.get("top_nav_key", "overview")
+current_label = next((label for key, label in nav_items if key == current_key), "Übersicht")
+
+selected_label = st.radio(
     "Bereich",
-    section_options,
+    nav_labels,
     horizontal=True,
     label_visibility="collapsed",
-    key="top_nav",
-    format_func=lambda option: section_labels.get(option, option),
+    index=nav_labels.index(current_label) if current_label in nav_labels else 0,
 )
+selected = nav_map[selected_label]
+st.session_state.top_nav_key = selected
 
 summary_cols = st.columns(4)
 summary_cols[0].metric("Teilnehmer", len(participants))
@@ -259,25 +213,25 @@ if selected == "overview":
     can_edit = role == "admin"
     c1, c2 = st.columns(2)
     with c1:
-        destination = st.text_input("Reiseziel", details.get("destination", ""), disabled=not can_edit)
+        destination = st.text_input("Urlaub", details.get("destination", ""), disabled=not can_edit)
         city = st.text_input("Ort", details.get("city", ""), disabled=not can_edit)
         street = st.text_input("Straße", details.get("street", ""), disabled=not can_edit)
-        postal_code = st.text_input("Postleitzahl", details.get("plz", ""), disabled=not can_edit)
-        homepage = st.text_input("Homepage", details.get("homepage", ""), disabled=not can_edit)
+        postal_code = st.text_input("Postleitzahl", details.get("postal_code", ""), disabled=not can_edit)
+        homepage = st.text_input("Startseite", details.get("homepage", ""), disabled=not can_edit)
     with c2:
         start = st.date_input("Start", value=datetime.date.fromisoformat(details.get("start_date", str(datetime.date.today()))) if details.get("start_date") else datetime.date.today(), disabled=not can_edit)
         end = st.date_input("Ende", value=datetime.date.fromisoformat(details.get("end_date", str(datetime.date.today()))) if details.get("end_date") else datetime.date.today(), disabled=not can_edit)
         meet_date = st.date_input("Treffpunkt Datum", value=datetime.date.fromisoformat(details.get("meet_date", str(datetime.date.today()))) if details.get("meet_date") else datetime.date.today(), disabled=not can_edit)
-        meet_time = st.time_input("Treffpunkt Uhrzeit", value=_parse_time(details.get("meet_time")), disabled=not can_edit)
+        meet_time = st.time_input("Treffpunkt Uhrzeit", value=_parse_time(details.get("meet_time", "18:00")), disabled=not can_edit)
 
-    extra = st.text_area("Zusätzliche Infos", details.get("extra", ""), disabled=not can_edit)
+    extra = st.text_area("Zusätzliche Informationen", details.get("extra", ""), disabled=not can_edit)
 
     new_details = {
         **details,
         "destination": destination,
         "city": city,
         "street": street,
-        "plz": postal_code,
+        "postal_code": postal_code,
         "homepage": homepage,
         "start_date": str(start),
         "end_date": str(end),
@@ -299,56 +253,30 @@ if selected == "overview":
 
     st.caption(f"Treffpunkt: {meet_date.strftime('%d.%m.%Y')} um {meet_time.strftime('%H:%M')} Uhr")
 
-    weather_queries = [
-        " ".join(x for x in [postal_code, city] if x.strip()),
-        city,
-        destination,
-    ]
-    weather_label = _first_non_empty([city, destination, address])
-    weather_result, weather_error = get_weather_data(*weather_queries)
+    weather_candidates = [f"{postal_code} {city}".strip(), city, destination]
+    location, location_error = geocode_location(*weather_candidates)
+    weather_label = city or destination or postal_code
     if weather_label:
         st.subheader("🌤️ Wetter")
-        if weather_result:
-            weather = weather_result["data"]
-            source_query = weather_result.get("source_query")
-            source_location = weather_result.get("source_location")
-            if source_query:
-                source_text = source_location or source_query
-                st.caption(f"Gefunden über: {source_text}")
-
-            current = weather.get("current", {})
-            current_icon = weather_icon_from_code(current.get("weather_code", 0))
-            wc1, wc2, wc3, wc4 = st.columns([1.15, 1, 1, 1])
-            with wc1:
-                st.markdown(f"<div style='font-size:64px; line-height:1;'>{current_icon}</div>", unsafe_allow_html=True)
-            with wc2:
-                st.metric("Aktuell", f"{current.get('temperature_2m', '–')}°C")
-            with wc3:
-                st.metric("Gefühlt", f"{current.get('apparent_temperature', '–')}°C")
-            with wc4:
-                st.metric("Wind", f"{current.get('wind_speed_10m', '–')} km/h")
-
-            daily = weather.get("daily", {})
-            dates = daily.get("time", [])[:3]
-            max_temps = daily.get("temperature_2m_max", [])[:3]
-            min_temps = daily.get("temperature_2m_min", [])[:3]
-            rain = daily.get("precipitation_probability_max", [])[:3]
-            weather_codes = daily.get("weather_code", [])[:3]
-            if dates:
-                st.caption(f"Vorhersage für {weather_label}")
-                forecast_cols = st.columns(len(dates))
-                for idx, day in enumerate(dates):
-                    icon = weather_icon_from_code(weather_codes[idx]) if idx < len(weather_codes) else "🌡️"
-                    max_temp = max_temps[idx] if idx < len(max_temps) else "–"
-                    min_temp = min_temps[idx] if idx < len(min_temps) else "–"
-                    rain_value = rain[idx] if idx < len(rain) else "–"
-                    with forecast_cols[idx]:
-                        st.markdown(
-                            f"<div class='me-card'><strong>{datetime.date.fromisoformat(day).strftime('%a, %d.%m.')}</strong><br>{icon} {max_temp}° / {min_temp}°<br><span class='me-soft'>Regen: {rain_value}%</span></div>",
-                            unsafe_allow_html=True,
-                        )
+        if location:
+            weather, weather_error = get_weather_forecast(location["latitude"], location["longitude"])
+            if weather:
+                st.caption(f"Wetter gefunden über: {location['query']}")
+                current = weather.get("current", {})
+                current_icon = weather_icon_from_code(current.get("weather_code", 0))
+                wc1, wc2, wc3, wc4 = st.columns([1.15, 1, 1, 1])
+                with wc1:
+                    st.markdown(f"<div style='font-size:64px; line-height:1;'>{current_icon}</div>", unsafe_allow_html=True)
+                with wc2:
+                    st.metric("Aktuell", f"{current.get('temperature_2m', '–')}°C")
+                with wc3:
+                    st.metric("Gefühlt", f"{current.get('apparent_temperature', '–')}°C")
+                with wc4:
+                    st.metric("Wind", f"{current.get('wind_speed_10m', '–')} km/h")
+            else:
+                st.info(weather_error or "Wetterdaten aktuell nicht verfügbar.")
         else:
-            st.warning(weather_error or f"Wetterdaten für {weather_label} aktuell nicht verfügbar.")
+            st.info(location_error or "Wetterdaten aktuell nicht verfügbar.")
 
 elif selected == "chat":
     if chat_unread:
