@@ -287,17 +287,46 @@ def apply_theme() -> None:
           box-shadow: 0 0 0 1px rgba(124,156,255,.22), 0 10px 30px rgba(0,0,0,.22) !important;
         }
 
+        .stButton > button p,
+        .stButton > button span,
+        .stButton > button div {
+          color: inherit !important;
+          -webkit-text-fill-color: inherit !important;
+          opacity: 1 !important;
+        }
+
         .stButton > button:disabled,
         .stButton > button[disabled],
         .stDownloadButton > button:disabled,
-        .stDownloadButton > button[disabled] {
+        .stDownloadButton > button[disabled],
+        div[data-testid="stForm"] .stButton > button,
+        div[data-testid="stForm"] .stButton > button:disabled,
+        div[data-testid="stForm"] .stButton > button[disabled],
+        button[kind="secondaryFormSubmit"],
+        button[kind="secondaryFormSubmit"]:disabled,
+        button[kind="secondaryFormSubmit"][disabled] {
           color: #d6def2 !important;
           -webkit-text-fill-color: #d6def2 !important;
-          background: linear-gradient(180deg, rgba(50, 60, 87, 0.96), rgba(35, 45, 70, 0.96)) !important;
+          background: linear-gradient(180deg, rgba(50, 60, 87, 0.98), rgba(35, 45, 70, 0.98)) !important;
           border: 1px solid rgba(124,156,255,.24) !important;
           box-shadow: none !important;
           opacity: 1 !important;
           cursor: not-allowed !important;
+        }
+
+        .stButton > button:disabled *,
+        .stButton > button[disabled] *,
+        div[data-testid="stForm"] .stButton > button *,
+        div[data-testid="stForm"] .stButton > button:disabled *,
+        div[data-testid="stForm"] .stButton > button[disabled] *,
+        button[kind="secondaryFormSubmit"] *,
+        button[kind="secondaryFormSubmit"]:disabled *,
+        button[kind="secondaryFormSubmit"][disabled] * {
+          color: #d6def2 !important;
+          fill: #d6def2 !important;
+          stroke: #d6def2 !important;
+          -webkit-text-fill-color: #d6def2 !important;
+          opacity: 1 !important;
         }
 
         div[role="radiogroup"] {
