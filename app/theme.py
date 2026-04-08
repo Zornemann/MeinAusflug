@@ -248,21 +248,56 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        div[data-testid="stTextInputRoot"] input:focus,
+        div[data-testid="stTextArea"] textarea:focus,
+        div[data-testid="stNumberInput"] input:focus,
+        div[data-testid="stDateInput"] input:focus,
+        .stTimeInput input:focus,
+        div[data-baseweb="select"] input:focus {
+          border-color: rgba(124,156,255,.55) !important;
+          box-shadow: 0 0 0 1px rgba(124,156,255,.18) !important;
+        }
+
         .stButton > button, .stDownloadButton > button, .stLinkButton > a {
           border-radius: 16px !important;
           border: 1px solid var(--border) !important;
           background: linear-gradient(180deg, rgba(33,47,80,0.95), rgba(21,30,50,0.95)) !important;
           color: var(--text) !important;
+          -webkit-text-fill-color: var(--text) !important;
           min-height: 2.9rem;
           font-weight: 700;
           box-shadow: var(--shadow);
+          transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
         }
 
         .stButton > button:hover,
         .stDownloadButton > button:hover,
         .stLinkButton > a:hover {
           border-color: rgba(124,156,255,.55) !important;
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
           transform: translateY(-1px);
+        }
+
+        .stButton > button:focus,
+        .stDownloadButton > button:focus,
+        .stLinkButton > a:focus {
+          outline: none !important;
+          border-color: rgba(124,156,255,.65) !important;
+          box-shadow: 0 0 0 1px rgba(124,156,255,.22), 0 10px 30px rgba(0,0,0,.22) !important;
+        }
+
+        .stButton > button:disabled,
+        .stButton > button[disabled],
+        .stDownloadButton > button:disabled,
+        .stDownloadButton > button[disabled] {
+          color: #d6def2 !important;
+          -webkit-text-fill-color: #d6def2 !important;
+          background: linear-gradient(180deg, rgba(50, 60, 87, 0.96), rgba(35, 45, 70, 0.96)) !important;
+          border: 1px solid rgba(124,156,255,.24) !important;
+          box-shadow: none !important;
+          opacity: 1 !important;
+          cursor: not-allowed !important;
         }
 
         div[role="radiogroup"] {
@@ -313,6 +348,13 @@ def apply_theme() -> None:
 
         .stAlert, iframe, .element-container .stImage img {
           border-radius: 20px !important;
+        }
+
+        div[data-testid="stForm"] {
+          background: rgba(10, 16, 31, 0.34);
+          border: 1px solid rgba(130, 153, 196, 0.08);
+          border-radius: 18px;
+          padding: 0.3rem 0.3rem 0.8rem 0.3rem;
         }
 
         @media (max-width: 768px) {
