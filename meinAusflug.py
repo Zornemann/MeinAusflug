@@ -117,6 +117,36 @@ def get_weather_forecast(latitude: float, longitude: float):
         return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
 
 
+def _handle_in_app_notifications(trip_key: str, trip: dict, user: str, current_chat_unread: int, current_checklist_unread: int) -> None:
+    notif = st.session_state.setdefault(
+        "notify_settings",
+        {
+            "chat": True,
+            "checklist": True,
+            "silent_first_load": True,
+        },
+    )
+    cache = st.session_state.setdefault("notify_cache", {})
+    trip_cache = cache.setdefault(trip_key, {"chat": current_chat_unread, "checklist": current_checklist_unread, "initialized": False})
+
+    if not trip_cache.get("initialized"):
+        trip_cache["chat"] = current_chat_unread
+        trip_cache["checklist"] = current_checklist_unread
+        trip_cache["initialized"] = True
+        return
+
+    if notif.get("chat", True) and current_chat_unread > trip_cache.get("chat", 0):
+        diff = current_chat_unread - trip_cache.get("chat", 0)
+        st.toast(f"💬 {diff} neue Chatnachricht{'en' if diff != 1 else ''}", icon="🔔")
+
+    if notif.get("checklist", True) and current_checklist_unread > trip_cache.get("checklist", 0):
+        diff = current_checklist_unread - trip_cache.get("checklist", 0)
+        st.toast(f"📝 {diff} neue{'r' if diff == 1 else ''} Checklisten-Eintrag{'' if diff == 1 else 'e'}", icon="🔔")
+
+    trip_cache["chat"] = current_chat_unread
+    trip_cache["checklist"] = current_checklist_unread
+
+
 if "user" not in st.session_state:
     st.title("🌍 MeinAusflug")
     preset_name = st.query_params.get("invite_name", "") or ""
@@ -174,6 +204,15 @@ if needs_save:
 role = participants.get(user, {}).get("role", "member")
 chat_unread = get_chat_unread_count(trip, user)
 check_unread = get_checklist_unread_count(trip, user)
+
+_handle_in_app_notifications(trip_key, trip, user, chat_unread, check_unread)
+
+with st.sidebar:
+    st.markdown("#### 🔔 Benachrichtigungen")
+    notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True, "silent_first_load": True})
+    notify_settings["chat"] = st.checkbox("Neue Chatnachrichten", value=notify_settings.get("chat", True), key="notify_chat")
+    notify_settings["checklist"] = st.checkbox("Neue Checklisten-Einträge", value=notify_settings.get("checklist", True), key="notify_checklist")
+    st.caption("Hinweise erscheinen in der App, solange sie geöffnet ist.")
 
 st.title(f"🌍 {trip.get('name', trip_key)}")
 
@@ -282,12 +321,14 @@ elif selected == "chat":
     if chat_unread:
         mark_read(trip, user, "chat")
         save_db(data)
+        st.session_state.setdefault("notify_cache", {}).setdefault(trip_key, {})["chat"] = 0
     render_chat(data, trip_key, user)
 
 elif selected == "checklist":
     if check_unread:
         mark_read(trip, user, "checklist")
         save_db(data)
+        st.session_state.setdefault("notify_cache", {}).setdefault(trip_key, {})["checklist"] = 0
     render_checklist(data, trip_key, user)
 
 elif selected == "costs":

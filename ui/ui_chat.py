@@ -107,10 +107,10 @@ def render_chat(data: dict, trip_key: str, user: str) -> None:
                 unsafe_allow_html=True,
             )
 
-            with st.container():
-                st.markdown("<div class='me-reaction-picker'>", unsafe_allow_html=True)
-                reaction_cols = st.columns(len(REACTIONS))
-                for col, emoji in zip(reaction_cols, REACTIONS):
+            with st.popover("😊 Reaktion", use_container_width=False):
+                st.caption("Reaktion auswählen")
+                cols = st.columns(len(REACTIONS))
+                for col, emoji in zip(cols, REACTIONS):
                     with col:
                         if st.button(emoji, key=f"react_{trip_key}_{msg_id}_{emoji}", use_container_width=True):
                             for real_msg in trip.get("messages", []):
@@ -118,7 +118,6 @@ def render_chat(data: dict, trip_key: str, user: str) -> None:
                                     _toggle_reaction(real_msg, emoji, user)
                                     save_db(data)
                                     st.rerun()
-                st.markdown("</div>", unsafe_allow_html=True)
 
         with outer_right:
             can_delete = role == "admin" or msg.get("author") == user
