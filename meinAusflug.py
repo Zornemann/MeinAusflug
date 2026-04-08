@@ -24,25 +24,18 @@ from ui.ui_photos import render_photos
 
 st.set_page_config(page_title=APP_NAME, page_icon="🌍", layout="wide")
 apply_theme()
-
 data = normalize_data(load_db())
-
 
 def weather_icon_from_code(code: int) -> str:
     mapping = {
         0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
-        45: "🌫️", 48: "🌫️",
-        51: "🌦️", 53: "🌦️", 55: "🌦️",
-        56: "🌨️", 57: "🌨️",
-        61: "🌧️", 63: "🌧️", 65: "🌧️",
-        66: "🌨️", 67: "🌨️",
-        71: "❄️", 73: "❄️", 75: "❄️", 77: "❄️",
-        80: "🌦️", 81: "🌧️", 82: "⛈️",
-        85: "🌨️", 86: "❄️",
+        45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌦️", 55: "🌦️",
+        56: "🌨️", 57: "🌨️", 61: "🌧️", 63: "🌧️", 65: "🌧️",
+        66: "🌨️", 67: "🌨️", 71: "❄️", 73: "❄️", 75: "❄️", 77: "❄️",
+        80: "🌦️", 81: "🌧️", 82: "⛈️", 85: "🌨️", 86: "❄️",
         95: "⛈️", 96: "⛈️", 99: "⛈️",
     }
     return mapping.get(int(code), "🌡️")
-
 
 @st.cache_data(show_spinner=False, ttl=1800)
 def get_weather_data(city: str):
@@ -70,7 +63,6 @@ def get_weather_data(city: str):
     except Exception:
         return None
 
-
 if "user" not in st.session_state:
     st.title("🌍 MeinAusflug")
     preset_name = st.query_params.get("invite_name", "") or ""
@@ -88,40 +80,29 @@ if not trips:
 
 trip_keys = list(trips.keys())
 qp_trip = st.query_params.get("trip")
+initial_trip = qp_trip if qp_trip in trips else trip_keys[0]
 
-if "selected_trip" not in st.session_state:
-    st.session_state.selected_trip = qp_trip if qp_trip in trips else trip_keys[0]
-elif st.session_state.selected_trip not in trips:
-    st.session_state.selected_trip = trip_keys[0]
-
-# widget state kept separate from application state
-if "trip_selector" not in st.session_state or st.session_state.trip_selector not in trips:
-    st.session_state.trip_selector = st.session_state.selected_trip
-
-def _on_trip_change():
-    st.session_state.selected_trip = st.session_state.trip_selector
+if "selected_trip" not in st.session_state or st.session_state.selected_trip not in trips:
+    st.session_state.selected_trip = initial_trip
 
 with st.sidebar:
     st.markdown(f"### 👋 {user}")
-    st.selectbox(
-        "Reise wählen",
-        trip_keys,
-        key="trip_selector",
-        on_change=_on_trip_change,
-    )
+    trip_key = st.selectbox("Reise wählen", trip_keys, key="selected_trip")
+    st.caption("Einladungslink und Teilnehmerverwaltung findest du unter „Infos“.")
+    if st.button("Neu laden", use_container_width=True):
+        st.rerun()
 
-trip_key = st.session_state.selected_trip
 trip = trips[trip_key]
 
 participants = trip.setdefault("participants", {})
-participant_added = False
+needs_save = False
 if user not in participants:
     participants[user] = {
         "display_name": user,
         "role": "member",
         "joined_at": datetime.datetime.now().isoformat(),
     }
-    participant_added = True
+    needs_save = True
 else:
     participants[user].setdefault("display_name", user)
     participants[user].setdefault("role", "member")
@@ -134,20 +115,24 @@ trip.setdefault("expenses", [])
 trip.setdefault("images", [])
 trip.setdefault("last_read", {})
 
-if participant_added:
+if needs_save:
     save_db(data)
 
 role = participants.get(user, {}).get("role", "member")
 chat_unread = get_chat_unread_count(trip, user)
 check_unread = get_checklist_unread_count(trip, user)
 
-with st.sidebar:
-    st.caption(f"Rolle: {role}")
-    st.caption("Einladungslink und Teilnehmerverwaltung findest du unter „Infos“.")
-    if st.button("Neu laden", use_container_width=True):
-        st.rerun()
-
 st.title(f"🌍 {trip.get('name', trip_key)}")
+
+sections = [
+    "Übersicht",
+    f"Chat{' • ' + str(chat_unread) if chat_unread else ''}",
+    f"Checkliste{' • ' + str(check_unread) if check_unread else ''}",
+    "Kosten",
+    "Fotos",
+    "Infos",
+]
+selected = st.radio("Bereich", sections, horizontal=True, label_visibility="collapsed", key="top_nav")
 
 summary_cols = st.columns(4)
 summary_cols[0].metric("Teilnehmer", len(participants))
@@ -155,22 +140,11 @@ summary_cols[1].metric("Nachrichten", len(trip.get("messages", [])), delta=f"{ch
 summary_cols[2].metric("Checkliste", len(trip.get("tasks", [])), delta=f"{check_unread} neu" if check_unread else None)
 summary_cols[3].metric("Kosten", f"{sum(float(e.get('amount', 0) or 0) for e in trip.get('expenses', [])):.2f} €")
 
-sections = [
-    "Übersicht",
-    f"Chat • {chat_unread}" if chat_unread else "Chat",
-    f"Checkliste • {check_unread}" if check_unread else "Checkliste",
-    "Kosten",
-    "Fotos",
-    "Infos",
-]
-selected = st.radio("Bereich", sections, horizontal=True, label_visibility="collapsed")
-
 details = trip.setdefault("details", {})
 
 if selected.startswith("Übersicht"):
     st.subheader("📍 Reiseübersicht")
     can_edit = role == "admin"
-
     c1, c2 = st.columns(2)
     with c1:
         destination = st.text_input("Reiseziel", details.get("destination", ""), disabled=not can_edit)
@@ -206,6 +180,9 @@ if selected.startswith("Übersicht"):
         maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(address)}"
         st.link_button("🗺️ Adresse in Google Maps öffnen", maps_url, use_container_width=True)
 
+    if homepage:
+        st.link_button("🌐 Homepage öffnen", homepage, use_container_width=True)
+
     st.caption(f"Treffpunkt: {meet_date.strftime('%d.%m.%Y')} um {meet_time.strftime('%H:%M')} Uhr")
 
     weather_city = city or destination
@@ -228,13 +205,15 @@ if selected.startswith("Übersicht"):
             st.info("Wetterdaten aktuell nicht verfügbar.")
 
 elif selected.startswith("Chat"):
-    mark_read(trip, user, "chat")
-    save_db(data)
+    if chat_unread:
+        mark_read(trip, user, "chat")
+        save_db(data)
     render_chat(data, trip_key, user)
 
 elif selected.startswith("Checkliste"):
-    mark_read(trip, user, "checklist")
-    save_db(data)
+    if check_unread:
+        mark_read(trip, user, "checklist")
+        save_db(data)
     render_checklist(data, trip_key, user)
 
 elif selected == "Kosten":
