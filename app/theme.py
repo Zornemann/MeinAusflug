@@ -18,46 +18,23 @@ def apply_theme() -> None:
           --accent: #7c9cff;
           --accent-2: #5eead4;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
-          --page-bg:
+        }
+
+        .stApp {
+          background:
             radial-gradient(circle at top left, rgba(124,156,255,.16), transparent 28%),
             radial-gradient(circle at top right, rgba(94,234,212,.12), transparent 24%),
             linear-gradient(180deg, #0b1020 0%, #0f172a 100%);
-        }
-
-        html, body, [data-testid="stAppViewContainer"], .stApp, section.main {
-          background: var(--page-bg) !important;
           color: var(--text);
         }
 
-        html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-
-        [class*="css"] {
+        html, body, [class*="css"] {
           color: var(--text);
-        }
-
-        /* Entfernt den weißen Bereich oberhalb der App in neueren Streamlit-Versionen */
-        [data-testid="stAppViewContainer"] > .main,
-        [data-testid="stAppViewContainer"] > .main > div,
-        [data-testid="stAppViewContainer"] > .main > div > div,
-        .main .block-container {
-          background: transparent !important;
         }
 
         header[data-testid="stHeader"] {
           background: transparent !important;
           height: 0 !important;
-          min-height: 0 !important;
-          border: 0 !important;
-          box-shadow: none !important;
-        }
-
-        [data-testid="stHeader"]::before,
-        [data-testid="stHeader"]::after {
-          display: none !important;
-          content: none !important;
         }
 
         div[data-testid="stToolbar"] {
@@ -71,7 +48,7 @@ def apply_theme() -> None:
 
         .block-container {
           max-width: 1120px;
-          padding-top: 0 !important;
+          padding-top: 0.2rem;
           padding-bottom: 5rem;
         }
 
@@ -80,8 +57,16 @@ def apply_theme() -> None:
         }
 
         section[data-testid="stSidebar"] {
-          background: rgba(10, 15, 28, 0.96) !important;
+          background: rgba(10, 15, 28, 0.96);
           border-right: 1px solid var(--border);
+        }
+
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] .stCaption,
+        section[data-testid="stSidebar"] p,
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] div {
+          color: var(--text);
         }
 
         div[data-testid="stMetric"] {
@@ -111,6 +96,97 @@ def apply_theme() -> None:
           color: var(--text) !important;
           border: 1px solid var(--border) !important;
           border-radius: 16px !important;
+        }
+
+        /* Selectbox / Multiselect: Wert, Placeholder, Pfeil und Dropdown lesbar machen */
+        div[data-baseweb="select"] * {
+          color: var(--text) !important;
+        }
+
+        div[data-baseweb="select"] input {
+          -webkit-text-fill-color: var(--text) !important;
+          color: var(--text) !important;
+          caret-color: var(--text) !important;
+        }
+
+        div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p,
+        div[data-baseweb="select"] span,
+        div[data-baseweb="select"] div {
+          color: var(--text) !important;
+        }
+
+        div[data-baseweb="select"] svg {
+          fill: var(--text) !important;
+          color: var(--text) !important;
+        }
+
+        div[role="listbox"] {
+          background: rgba(17, 24, 43, 0.98) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 16px !important;
+          box-shadow: var(--shadow) !important;
+        }
+
+        div[role="option"] {
+          background: transparent !important;
+          color: var(--text) !important;
+        }
+
+        div[role="option"]:hover {
+          background: rgba(124,156,255,.16) !important;
+        }
+
+        /* Sidebar-Selectbox und Dropdowns stärker kontrastieren */
+        section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+          background: linear-gradient(180deg, rgba(29, 42, 74, 0.98), rgba(20, 30, 53, 0.98)) !important;
+          border: 1px solid rgba(130, 153, 196, 0.24) !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        section[data-testid="stSidebar"] div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p,
+        section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+        section[data-testid="stSidebar"] div[data-baseweb="select"] input,
+        section[data-testid="stSidebar"] div[data-baseweb="select"] div {
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          font-weight: 600;
+        }
+
+        /* Geöffnete Dropdown-Liste */
+        div[role="listbox"] [role="option"] {
+          color: #f7f9fc !important;
+          background: transparent !important;
+          border-radius: 12px;
+          margin: 0.15rem 0.3rem;
+          padding-top: 0.45rem !important;
+          padding-bottom: 0.45rem !important;
+        }
+
+        div[role="listbox"] [role="option"][aria-selected="true"] {
+          background: rgba(124,156,255,.24) !important;
+          color: #ffffff !important;
+        }
+
+        /* MultiSelect-Tags bei "Wer bringt es mit?" */
+        div[data-baseweb="tag"] {
+          background: rgba(124,156,255,.18) !important;
+          border: 1px solid rgba(124,156,255,.35) !important;
+          border-radius: 999px !important;
+        }
+
+        div[data-baseweb="tag"] span,
+        div[data-baseweb="tag"] div,
+        div[data-baseweb="tag"] svg {
+          color: #f8fbff !important;
+          fill: #f8fbff !important;
+        }
+
+        /* Placeholder in Selects lesbarer machen */
+        div[data-baseweb="select"] input::placeholder,
+        div[data-baseweb="select"] input::-webkit-input-placeholder {
+          color: #b7c4e3 !important;
+          -webkit-text-fill-color: #b7c4e3 !important;
+          opacity: 1 !important;
         }
 
         input::placeholder,
@@ -190,7 +266,7 @@ def apply_theme() -> None:
           .block-container {
             padding-left: 0.8rem;
             padding-right: 0.8rem;
-            padding-top: 0 !important;
+            padding-top: 0.4rem;
             padding-bottom: 5.5rem;
           }
 
