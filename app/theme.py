@@ -54,7 +54,7 @@ def apply_theme() -> None:
           padding: 0.95rem 1rem;
         }
 
-        /* Inputs: wrapper */
+        /* Input wrappers */
         div[data-testid="stTextInputRoot"] > div,
         div[data-testid="stTextArea"] > div,
         div[data-testid="stNumberInput"] > div,
@@ -66,7 +66,7 @@ def apply_theme() -> None:
           border-radius: 16px !important;
         }
 
-        /* Inputs: actual fields */
+        /* Actual fields */
         div[data-testid="stTextInputRoot"] input,
         div[data-testid="stTextArea"] textarea,
         div[data-testid="stNumberInput"] input,
@@ -87,7 +87,7 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Disabled/read-only fields remain readable */
+        /* Disabled / readonly remain readable */
         div[data-testid="stTextInputRoot"] input:disabled,
         div[data-testid="stTextArea"] textarea:disabled,
         div[data-testid="stNumberInput"] input:disabled,
@@ -103,7 +103,7 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Browser autofill fix */
+        /* Browser autofill */
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
@@ -124,34 +124,102 @@ def apply_theme() -> None:
           -webkit-text-fill-color: #9fb0d4 !important;
         }
 
+        /* Select field closed state */
         div[data-baseweb="select"] *,
-        div[data-baseweb="select"] svg {
-          color: var(--text) !important;
-          fill: var(--text) !important;
-          -webkit-text-fill-color: var(--text) !important;
+        div[data-baseweb="select"] svg,
+        div[data-baseweb="select"] input,
+        div[data-baseweb="select"] span,
+        div[data-baseweb="select"] div {
+          color: #f8fbff !important;
+          fill: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          opacity: 1 !important;
         }
 
+        /* Dropdown / portal container */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] *,
+        [role="listbox"],
+        [role="listbox"] *,
         ul[data-baseweb="menu"],
-        ul[data-baseweb="menu"] *,
-        div[role="listbox"],
-        div[role="listbox"] * {
-          color: #f7f9fc !important;
+        ul[data-baseweb="menu"] * {
           -webkit-text-fill-color: #f7f9fc !important;
         }
 
-        ul[data-baseweb="menu"],
-        div[role="listbox"] {
-          background: rgba(17, 24, 43, 0.99) !important;
+        div[data-baseweb="popover"] > div,
+        [role="listbox"],
+        ul[data-baseweb="menu"] {
+          background: rgba(17, 24, 43, 0.995) !important;
           border: 1px solid rgba(130, 153, 196, 0.18) !important;
           border-radius: 16px !important;
           box-shadow: 0 10px 30px rgba(0,0,0,.22) !important;
         }
 
-        div[role="listbox"] [role="option"]:hover,
-        ul[data-baseweb="menu"] li:hover {
+        /* Explicit option styling so text stays readable */
+        [role="listbox"] [role="option"],
+        ul[data-baseweb="menu"] li,
+        div[data-baseweb="popover"] [role="option"] {
+          background: rgba(17, 24, 43, 0.995) !important;
+          color: #f7f9fc !important;
+          border-radius: 10px !important;
+          margin: 0.12rem 0.3rem !important;
+          padding-top: 0.5rem !important;
+          padding-bottom: 0.5rem !important;
+          opacity: 1 !important;
+        }
+
+        [role="listbox"] [role="option"] *,
+        ul[data-baseweb="menu"] li *,
+        div[data-baseweb="popover"] [role="option"] * {
+          background: transparent !important;
+          color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
+          opacity: 1 !important;
+        }
+
+        [role="listbox"] [role="option"]:hover,
+        ul[data-baseweb="menu"] li:hover,
+        div[data-baseweb="popover"] [role="option"]:hover {
           background: rgba(124,156,255,.18) !important;
+          color: #ffffff !important;
+        }
+
+        [role="listbox"] [role="option"]:hover *,
+        ul[data-baseweb="menu"] li:hover *,
+        div[data-baseweb="popover"] [role="option"]:hover * {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+        }
+
+        [role="listbox"] [role="option"][aria-selected="true"],
+        ul[data-baseweb="menu"] li[aria-selected="true"],
+        div[data-baseweb="popover"] [role="option"][aria-selected="true"] {
+          background: rgba(124,156,255,.26) !important;
+          color: #ffffff !important;
+        }
+
+        [role="listbox"] [role="option"][aria-selected="true"] *,
+        ul[data-baseweb="menu"] li[aria-selected="true"] *,
+        div[data-baseweb="popover"] [role="option"][aria-selected="true"] * {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+        }
+
+        /* Multiselect tags */
+        div[data-baseweb="tag"] {
+          background: rgba(124,156,255,.18) !important;
+          border: 1px solid rgba(124,156,255,.35) !important;
+          border-radius: 999px !important;
+        }
+
+        div[data-baseweb="tag"],
+        div[data-baseweb="tag"] *,
+        div[data-baseweb="tag"] span,
+        div[data-baseweb="tag"] svg {
+          color: #f8fbff !important;
+          fill: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          opacity: 1 !important;
         }
 
         div[data-testid="stForm"] {
