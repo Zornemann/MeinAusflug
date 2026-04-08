@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import urllib.parse
+from typing import Iterable
 
 import requests
 import streamlit as st
@@ -37,30 +38,78 @@ def weather_icon_from_code(code: int) -> str:
     }
     return mapping.get(int(code), "🌡️")
 
-@st.cache_data(show_spinner=False, ttl=1800)
-def get_weather_data(city: str):
-    city = (city or "").strip()
-    if not city:
-        return None
+
+def _first_non_empty(values: Iterable[str]) -> str:
+    for value in values:
+        if value and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _parse_time(value: str | None) -> datetime.time:
+    raw = (value or "18:00").strip()
     try:
-        geo = requests.get(
-            f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(city)}&count=1&language=de&format=json",
-            timeout=8,
-        ).json()
-        if not geo.get("results"):
+        return datetime.time.fromisoformat(raw)
+    except ValueError:
+        try:
+            return datetime.datetime.strptime(raw, "%H:%M").time()
+        except ValueError:
+            return datetime.time(18, 0)
+
+
+@st.cache_data(show_spinner=False, ttl=1800)
+def get_weather_data(*location_candidates: str):
+    queries = []
+    for candidate in location_candidates:
+        cleaned = (candidate or "").strip()
+        if cleaned and cleaned not in queries:
+            queries.append(cleaned)
+
+    if not queries:
+        return None
+
+    headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
+
+    try:
+        lat = lon = None
+        for query in queries:
+            geo_response = requests.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={
+                    "name": query,
+                    "count": 1,
+                    "language": "de",
+                    "format": "json",
+                },
+                headers=headers,
+                timeout=10,
+            )
+            geo_response.raise_for_status()
+            geo = geo_response.json()
+            if geo.get("results"):
+                lat = geo["results"][0]["latitude"]
+                lon = geo["results"][0]["longitude"]
+                break
+
+        if lat is None or lon is None:
             return None
-        lat = geo["results"][0]["latitude"]
-        lon = geo["results"][0]["longitude"]
-        return requests.get(
-            (
-                f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
-                "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m"
-                "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-                "&forecast_days=7&timezone=Europe%2FBerlin"
-            ),
-            timeout=8,
-        ).json()
-    except Exception:
+
+        weather_response = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "current": "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
+                "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+                "forecast_days": 7,
+                "timezone": "Europe/Berlin",
+            },
+            headers=headers,
+            timeout=10,
+        )
+        weather_response.raise_for_status()
+        return weather_response.json()
+    except requests.RequestException:
         return None
 
 if "user" not in st.session_state:
@@ -150,12 +199,13 @@ if selected.startswith("Übersicht"):
         destination = st.text_input("Reiseziel", details.get("destination", ""), disabled=not can_edit)
         city = st.text_input("Ort", details.get("city", ""), disabled=not can_edit)
         street = st.text_input("Straße", details.get("street", ""), disabled=not can_edit)
+        postal_code = st.text_input("Postleitzahl", details.get("plz", ""), disabled=not can_edit)
         homepage = st.text_input("Homepage", details.get("homepage", ""), disabled=not can_edit)
     with c2:
         start = st.date_input("Start", value=datetime.date.fromisoformat(details.get("start_date", str(datetime.date.today()))) if details.get("start_date") else datetime.date.today(), disabled=not can_edit)
         end = st.date_input("Ende", value=datetime.date.fromisoformat(details.get("end_date", str(datetime.date.today()))) if details.get("end_date") else datetime.date.today(), disabled=not can_edit)
         meet_date = st.date_input("Treffpunkt Datum", value=datetime.date.fromisoformat(details.get("meet_date", str(datetime.date.today()))) if details.get("meet_date") else datetime.date.today(), disabled=not can_edit)
-        meet_time = st.time_input("Treffpunkt Uhrzeit", value=datetime.time.fromisoformat(details.get("meet_time", "18:00")) if details.get("meet_time") else datetime.time(18, 0), disabled=not can_edit)
+        meet_time = st.time_input("Treffpunkt Uhrzeit", value=_parse_time(details.get("meet_time")), disabled=not can_edit)
 
     extra = st.text_area("Zusätzliche Infos", details.get("extra", ""), disabled=not can_edit)
 
@@ -164,6 +214,7 @@ if selected.startswith("Übersicht"):
         "destination": destination,
         "city": city,
         "street": street,
+        "plz": postal_code,
         "homepage": homepage,
         "start_date": str(start),
         "end_date": str(end),
@@ -175,7 +226,7 @@ if selected.startswith("Übersicht"):
         trip["details"] = new_details
         save_db(data)
 
-    address = ", ".join(x for x in [street, city] if x.strip())
+    address = ", ".join(x for x in [street, postal_code, city] if x.strip())
     if address:
         maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(address)}"
         st.link_button("🗺️ Adresse in Google Maps öffnen", maps_url, use_container_width=True)
@@ -185,9 +236,15 @@ if selected.startswith("Übersicht"):
 
     st.caption(f"Treffpunkt: {meet_date.strftime('%d.%m.%Y')} um {meet_time.strftime('%H:%M')} Uhr")
 
-    weather_city = city or destination
-    weather = get_weather_data(weather_city)
-    if weather_city:
+    weather_queries = [
+        ", ".join(x for x in [street, postal_code, city] if x.strip()),
+        ", ".join(x for x in [postal_code, city] if x.strip()),
+        city,
+        destination,
+    ]
+    weather_label = _first_non_empty([city, destination, address])
+    weather = get_weather_data(*weather_queries)
+    if weather_label:
         st.subheader("🌤️ Wetter")
         if weather:
             current = weather.get("current", {})
@@ -201,8 +258,28 @@ if selected.startswith("Übersicht"):
                 st.metric("Gefühlt", f"{current.get('apparent_temperature', '–')}°C")
             with wc4:
                 st.metric("Wind", f"{current.get('wind_speed_10m', '–')} km/h")
+
+            daily = weather.get("daily", {})
+            dates = daily.get("time", [])[:3]
+            max_temps = daily.get("temperature_2m_max", [])[:3]
+            min_temps = daily.get("temperature_2m_min", [])[:3]
+            rain = daily.get("precipitation_probability_max", [])[:3]
+            weather_codes = daily.get("weather_code", [])[:3]
+            if dates:
+                st.caption(f"Vorhersage für {weather_label}")
+                forecast_cols = st.columns(len(dates))
+                for idx, day in enumerate(dates):
+                    icon = weather_icon_from_code(weather_codes[idx]) if idx < len(weather_codes) else "🌡️"
+                    max_temp = max_temps[idx] if idx < len(max_temps) else "–"
+                    min_temp = min_temps[idx] if idx < len(min_temps) else "–"
+                    rain_value = rain[idx] if idx < len(rain) else "–"
+                    with forecast_cols[idx]:
+                        st.markdown(
+                            f"<div class='me-card'><strong>{datetime.date.fromisoformat(day).strftime('%a, %d.%m.')}</strong><br>{icon} {max_temp}° / {min_temp}°<br><span class='me-soft'>Regen: {rain_value}%</span></div>",
+                            unsafe_allow_html=True,
+                        )
         else:
-            st.info("Wetterdaten aktuell nicht verfügbar.")
+            st.info(f"Wetterdaten für {weather_label} aktuell nicht verfügbar.")
 
 elif selected.startswith("Chat"):
     if chat_unread:
