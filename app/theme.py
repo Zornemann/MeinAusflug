@@ -16,6 +16,7 @@ def apply_theme() -> None:
           --muted: #aeb8cc;
           --border: rgba(130, 153, 196, 0.18);
           --accent: #7c9cff;
+          --accent-strong: #94adff;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
         }
 
@@ -87,7 +88,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Disabled / readonly remain readable */
         div[data-testid="stTextInputRoot"] input:disabled,
         div[data-testid="stTextArea"] textarea:disabled,
         div[data-testid="stNumberInput"] input:disabled,
@@ -103,7 +103,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Browser autofill */
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
@@ -155,7 +154,6 @@ def apply_theme() -> None:
           box-shadow: 0 10px 30px rgba(0,0,0,.22) !important;
         }
 
-        /* Explicit option styling so text stays readable */
         [role="listbox"] [role="option"],
         ul[data-baseweb="menu"] li,
         div[data-baseweb="popover"] [role="option"] {
@@ -205,7 +203,6 @@ def apply_theme() -> None:
           -webkit-text-fill-color: #ffffff !important;
         }
 
-        /* Multiselect tags */
         div[data-baseweb="tag"] {
           background: rgba(124,156,255,.18) !important;
           border: 1px solid rgba(124,156,255,.35) !important;
@@ -305,6 +302,7 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        /* Navigation */
         div[role="radiogroup"] {
           position: sticky;
           top: 0.35rem;
@@ -331,6 +329,28 @@ def apply_theme() -> None:
           align-items: center;
           justify-content: center;
           font-weight: 700;
+          transition: all .18s ease;
+        }
+
+        div[role="radiogroup"] label:hover {
+          border-color: rgba(124,156,255,.35);
+          background: rgba(33, 47, 80, 0.98);
+        }
+
+        /* active tab */
+        div[role="radiogroup"] label[aria-checked="true"],
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] {
+          background: linear-gradient(180deg, rgba(77,110,196,0.45), rgba(47,70,128,0.85)) !important;
+          border-color: rgba(148,173,255,.72) !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px rgba(148,173,255,.12);
+          color: #ffffff !important;
+        }
+
+        div[role="radiogroup"] label[aria-checked="true"] *,
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] * {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+          font-weight: 800 !important;
         }
 
         div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
@@ -348,11 +368,48 @@ def apply_theme() -> None:
         .me-soft { color: var(--muted) !important; }
 
         @media (max-width: 768px) {
-          .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
+          .block-container {
+            padding-left: 0.8rem;
+            padding-right: 0.8rem;
+          }
+
+          /* modern mobile menu layout */
+          div[role="radiogroup"] {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 18px;
+          }
+
+          div[role="radiogroup"] label {
+            width: 100% !important;
+            min-height: 48px;
+            padding: 0.4rem 0.5rem;
+            border-radius: 14px;
+            text-align: center;
+            font-size: 0.92rem;
+            line-height: 1.1;
+          }
+
+          div[role="radiogroup"] label[aria-checked="true"],
+          div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08);
+          }
+
           .stButton > button,
           .stDownloadButton > button,
           .stLinkButton > a,
-          div[data-testid="stForm"] button { width: 100%; }
+          div[data-testid="stForm"] button {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 460px) {
+          div[role="radiogroup"] {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
         </style>
         """,
