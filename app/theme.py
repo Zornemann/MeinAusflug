@@ -55,29 +55,35 @@ def apply_theme() -> None:
           padding: 0.95rem 1rem;
         }
 
+        /* Input wrappers */
         div[data-testid="stTextInputRoot"] > div,
         div[data-testid="stTextArea"] > div,
         div[data-testid="stNumberInput"] > div,
         div[data-testid="stDateInput"] > div,
         div[data-baseweb="select"] > div,
-        .stTimeInput > div {
+        .stTimeInput > div,
+        .stTextInput > div > div,
+        .stTextArea > div > div {
           background: var(--card-2) !important;
           border: 1px solid var(--border) !important;
           border-radius: 16px !important;
         }
 
+        /* Actual fields */
         div[data-testid="stTextInputRoot"] input,
         div[data-testid="stTextArea"] textarea,
         div[data-testid="stNumberInput"] input,
         div[data-testid="stDateInput"] input,
         .stTimeInput input,
+        .stTextInput input,
+        .stTextArea textarea,
         input[type="text"],
         input[type="email"],
         input[type="password"],
         input[type="number"],
         input[type="date"],
         textarea {
-          background: var(--card-2) !important;
+          background: transparent !important;
           color: #f8fbff !important;
           -webkit-text-fill-color: #f8fbff !important;
           caret-color: #f8fbff !important;
@@ -86,19 +92,42 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        /* Login / name input explicit override */
+        .stTextInput input,
+        .stTextInput input:focus,
+        .stTextInput input:active {
+          background-color: rgba(33, 47, 80, 0.01) !important;
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+        }
+
         div[data-testid="stTextInputRoot"] input:disabled,
         div[data-testid="stTextArea"] textarea:disabled,
         div[data-testid="stNumberInput"] input:disabled,
         div[data-testid="stDateInput"] input:disabled,
         .stTimeInput input:disabled,
+        .stTextInput input:disabled,
         input[disabled],
         textarea[disabled],
         input[readonly],
         textarea[readonly] {
-          background: var(--card-2) !important;
+          background: transparent !important;
           color: #eef4ff !important;
           -webkit-text-fill-color: #eef4ff !important;
           opacity: 1 !important;
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus {
+          -webkit-text-fill-color: #f8fbff !important;
+          -webkit-box-shadow: 0 0 0px 1000px rgba(33, 47, 80, 0.96) inset !important;
+          box-shadow: 0 0 0px 1000px rgba(33, 47, 80, 0.96) inset !important;
+          transition: background-color 9999s ease-in-out 0s !important;
+          caret-color: #f8fbff !important;
         }
 
         input::placeholder,
@@ -108,6 +137,7 @@ def apply_theme() -> None:
           -webkit-text-fill-color: #9fb0d4 !important;
         }
 
+        /* Select field closed state */
         div[data-baseweb="select"] *,
         div[data-baseweb="select"] svg,
         div[data-baseweb="select"] input,
@@ -119,6 +149,7 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        /* Dropdown / portal container */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] *,
         [role="listbox"],
@@ -362,28 +393,6 @@ def apply_theme() -> None:
           background: rgba(124,156,255,.28);
           border-color: rgba(148,173,255,.62);
           box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-        }
-
-        .me-reaction-picker {
-          margin-top: 0.45rem;
-          padding-top: 0.55rem;
-          border-top: 1px solid rgba(130,153,196,.10);
-        }
-
-        .me-reaction-picker .stButton > button {
-          min-height: 2.15rem !important;
-          border-radius: 999px !important;
-          padding: 0.15rem 0.55rem !important;
-          font-size: 0.95rem !important;
-          background: rgba(27,38,66,.95) !important;
-          border: 1px solid rgba(130,153,196,.20) !important;
-          box-shadow: none !important;
-        }
-
-        .me-reaction-picker .stButton > button:hover {
-          background: rgba(58,79,132,.95) !important;
-          border-color: rgba(148,173,255,.52) !important;
-          transform: none !important;
         }
 
         @media (max-width: 768px) {
