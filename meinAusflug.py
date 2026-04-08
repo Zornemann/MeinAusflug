@@ -117,13 +117,12 @@ def get_weather_forecast(latitude: float, longitude: float):
         return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
 
 
-def _handle_in_app_notifications(trip_key: str, trip: dict, user: str, current_chat_unread: int, current_checklist_unread: int) -> None:
+def _handle_in_app_notifications(trip_key: str, current_chat_unread: int, current_checklist_unread: int) -> None:
     notif = st.session_state.setdefault(
         "notify_settings",
         {
             "chat": True,
             "checklist": True,
-            "silent_first_load": True,
         },
     )
     cache = st.session_state.setdefault("notify_cache", {})
@@ -188,6 +187,8 @@ if user not in participants:
     needs_save = True
 else:
     participants[user].setdefault("display_name", user)
+    if participants[user].get("role") not in {"admin", "editor", "member", "viewer"}:
+        participants[user]["role"] = "member"
     participants[user].setdefault("role", "member")
     participants[user].setdefault("joined_at", datetime.datetime.now().isoformat())
 
@@ -205,14 +206,15 @@ role = participants.get(user, {}).get("role", "member")
 chat_unread = get_chat_unread_count(trip, user)
 check_unread = get_checklist_unread_count(trip, user)
 
-_handle_in_app_notifications(trip_key, trip, user, chat_unread, check_unread)
+_handle_in_app_notifications(trip_key, chat_unread, check_unread)
 
 with st.sidebar:
     st.markdown("#### 🔔 Benachrichtigungen")
-    notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True, "silent_first_load": True})
+    notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True})
     notify_settings["chat"] = st.checkbox("Neue Chatnachrichten", value=notify_settings.get("chat", True), key="notify_chat")
     notify_settings["checklist"] = st.checkbox("Neue Checklisten-Einträge", value=notify_settings.get("checklist", True), key="notify_checklist")
     st.caption("Hinweise erscheinen in der App, solange sie geöffnet ist.")
+    st.markdown(f"**Rolle:** {role}")
 
 st.title(f"🌍 {trip.get('name', trip_key)}")
 
@@ -249,7 +251,7 @@ details = trip.setdefault("details", {})
 
 if selected == "overview":
     st.subheader("📍 Reiseübersicht")
-    can_edit = role == "admin"
+    can_edit = role in {"admin", "editor"}
     c1, c2 = st.columns(2)
     with c1:
         destination = st.text_input("Urlaub", details.get("destination", ""), disabled=not can_edit)

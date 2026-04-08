@@ -18,6 +18,9 @@ def apply_theme() -> None:
           --accent: #7c9cff;
           --accent-strong: #94adff;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
+          --success: #34d399;
+          --warning: #fbbf24;
+          --danger: #fb7185;
         }
 
         .stApp {
@@ -55,7 +58,6 @@ def apply_theme() -> None:
           padding: 0.95rem 1rem;
         }
 
-        /* Input wrappers */
         div[data-testid="stTextInputRoot"] > div,
         div[data-testid="stTextArea"] > div,
         div[data-testid="stNumberInput"] > div,
@@ -69,7 +71,6 @@ def apply_theme() -> None:
           border-radius: 16px !important;
         }
 
-        /* Actual fields */
         div[data-testid="stTextInputRoot"] input,
         div[data-testid="stTextArea"] textarea,
         div[data-testid="stNumberInput"] input,
@@ -92,7 +93,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Login / name input explicit override */
         .stTextInput input,
         .stTextInput input:focus,
         .stTextInput input:active {
@@ -130,14 +130,12 @@ def apply_theme() -> None:
           caret-color: #f8fbff !important;
         }
 
-        input::placeholder,
-        textarea::placeholder {
+        input::placeholder, textarea::placeholder {
           color: #9fb0d4 !important;
           opacity: 1 !important;
           -webkit-text-fill-color: #9fb0d4 !important;
         }
 
-        /* Select field closed state */
         div[data-baseweb="select"] *,
         div[data-baseweb="select"] svg,
         div[data-baseweb="select"] input,
@@ -149,7 +147,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Dropdown / portal container */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] *,
         [role="listbox"],
@@ -209,10 +206,7 @@ def apply_theme() -> None:
           border-radius: 999px !important;
         }
 
-        div[data-baseweb="tag"],
-        div[data-baseweb="tag"] *,
-        div[data-baseweb="tag"] span,
-        div[data-baseweb="tag"] svg {
+        div[data-baseweb="tag"], div[data-baseweb="tag"] *, div[data-baseweb="tag"] span, div[data-baseweb="tag"] svg {
           color: #f8fbff !important;
           fill: #f8fbff !important;
           -webkit-text-fill-color: #f8fbff !important;
@@ -286,7 +280,6 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Navigation */
         div[role="radiogroup"] {
           position: sticky;
           top: 0.35rem;
@@ -340,7 +333,7 @@ def apply_theme() -> None:
           display: none !important;
         }
 
-        .me-chat-row {
+        .me-chat-row, .me-card {
           background: rgba(14, 21, 40, 0.45);
           border: 1px solid rgba(130, 153, 196, 0.10);
           border-radius: 18px;
@@ -356,16 +349,8 @@ def apply_theme() -> None:
           margin-bottom: 0.55rem;
         }
 
-        .me-chat-author {
-          font-weight: 800;
-          color: #ffffff !important;
-        }
-
-        .me-chat-text {
-          color: #f7f9fc !important;
-          line-height: 1.45;
-        }
-
+        .me-chat-author { font-weight: 800; color: #ffffff !important; }
+        .me-chat-text { color: #f7f9fc !important; line-height: 1.45; }
         .me-soft { color: var(--muted) !important; }
 
         .me-reactions {
@@ -376,7 +361,7 @@ def apply_theme() -> None:
           margin-bottom: 0.2rem;
         }
 
-        .me-reaction-pill {
+        .me-reaction-pill, .me-pill {
           display: inline-flex;
           align-items: center;
           gap: 0.35rem;
@@ -389,18 +374,14 @@ def apply_theme() -> None:
           line-height: 1;
         }
 
-        .me-reaction-pill.me-active {
-          background: rgba(124,156,255,.28);
-          border-color: rgba(148,173,255,.62);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-        }
+        .me-reaction-pill.me-active { background: rgba(124,156,255,.28); border-color: rgba(148,173,255,.62); }
+        .me-pill-prio-hoch { background: rgba(251,113,133,.18); border-color: rgba(251,113,133,.35); }
+        .me-pill-prio-mittel { background: rgba(251,191,36,.18); border-color: rgba(251,191,36,.35); }
+        .me-pill-prio-niedrig { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
+        .me-pill-muted { background: rgba(130,153,196,.14); border-color: rgba(130,153,196,.24); }
 
         @media (max-width: 768px) {
-          .block-container {
-            padding-left: 0.8rem;
-            padding-right: 0.8rem;
-          }
-
+          .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
           div[role="radiogroup"] {
             display: grid !important;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -408,7 +389,6 @@ def apply_theme() -> None:
             padding: 0.5rem;
             border-radius: 18px;
           }
-
           div[role="radiogroup"] label {
             width: 100% !important;
             min-height: 48px;
@@ -418,36 +398,15 @@ def apply_theme() -> None:
             font-size: 0.92rem;
             line-height: 1.1;
           }
-
-          div[role="radiogroup"] label[aria-checked="true"],
-          div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08);
-          }
-
-          .me-chat-row {
-            padding: 0.8rem;
-            border-radius: 16px;
-          }
-
-          .me-chat-head {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.2rem;
-          }
-
-          .stButton > button,
-          .stDownloadButton > button,
-          .stLinkButton > a,
-          div[data-testid="stForm"] button {
+          .me-chat-row, .me-card { padding: 0.8rem; border-radius: 16px; }
+          .me-chat-head { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+          .stButton > button, .stDownloadButton > button, .stLinkButton > a, div[data-testid="stForm"] button {
             width: 100%;
           }
         }
 
         @media (max-width: 460px) {
-          div[role="radiogroup"] {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
+          div[role="radiogroup"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         </style>
         """,

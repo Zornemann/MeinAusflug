@@ -5,6 +5,14 @@ import streamlit as st
 
 from core.storage import save_db
 
+ROLE_OPTIONS = ["viewer", "member", "editor", "admin"]
+ROLE_HELP = {
+    "viewer": "Kann Inhalte ansehen",
+    "member": "Kann chatten und Aufgaben pflegen",
+    "editor": "Kann Reiseinhalte und Kosten bearbeiten",
+    "admin": "Voller Zugriff inkl. Teilnehmerverwaltung",
+}
+
 
 def render_info(data: dict, trip_key: str, user: str, app_url: str):
     trip = data["trips"][trip_key]
@@ -21,7 +29,7 @@ def render_info(data: dict, trip_key: str, user: str, app_url: str):
         with c2:
             display_name = st.text_input("Anzeigename")
         with c3:
-            role = st.selectbox("Rolle", ["member", "admin"], disabled=viewer_role != "admin")
+            role = st.selectbox("Rolle", ROLE_OPTIONS, index=ROLE_OPTIONS.index("member"), disabled=viewer_role != "admin")
         submitted = st.form_submit_button("Teilnehmer hinzufügen", use_container_width=True)
 
     if submitted:
@@ -39,12 +47,20 @@ def render_info(data: dict, trip_key: str, user: str, app_url: str):
             st.rerun()
 
     for person, meta in participants.items():
-        c1, c2, c3 = st.columns([2, 1, .8])
+        c1, c2, c3, c4 = st.columns([2, 1.2, 1.4, .8])
         c1.write(f"👤 **{meta.get('display_name') or person}**")
         c2.caption(f"Rolle: {meta.get('role', 'member')}")
+        c3.caption(ROLE_HELP.get(meta.get("role", "member"), ""))
         if viewer_role == "admin" and person != user:
-            if c3.button("Entfernen", key=f"remove_{trip_key}_{person}"):
-                participants.pop(person, None)
+            new_role = c4.selectbox(
+                " ",
+                ROLE_OPTIONS,
+                index=ROLE_OPTIONS.index(meta.get("role", "member")) if meta.get("role", "member") in ROLE_OPTIONS else 1,
+                key=f"role_{trip_key}_{person}",
+                label_visibility="collapsed",
+            )
+            if new_role != meta.get("role", "member"):
+                meta["role"] = new_role
                 save_db(data)
                 st.rerun()
 
