@@ -9,15 +9,86 @@ from core.storage import new_id, save_db
 REACTIONS = ["👍", "❤️", "😂", "🎉", "😮", "😢", "🙏"]
 
 
+def _message_author(msg: dict) -> str:
+    author = (
+        msg.get("author")
+        or msg.get("user")
+        or msg.get("name")
+        or msg.get("sender")
+        or msg.get("created_by")
+        or msg.get("username")
+        or msg.get("display_name")
+    )
+
+    if not author:
+        participant = msg.get("participant")
+        if isinstance(participant, dict):
+            author = (
+                participant.get("display_name")
+                or participant.get("name")
+                or participant.get("user")
+            )
+
+    if not author:
+        meta = msg.get("meta")
+        if isinstance(meta, dict):
+            author = (
+                meta.get("author")
+                or meta.get("user")
+                or meta.get("name")
+                or meta.get("created_by")
+            )
+
+    return str(author).strip() if str(author or "").strip() else "Unbekannt"
+
+
+def _message_text(msg: dict) -> str:
+    text = (
+        msg.get("text")
+        or msg.get("message")
+        or msg.get("content")
+        or msg.get("body")
+        or ""
+    )
+    return str(text)
+
+
+def _message_timestamp(msg: dict) -> str:
+    return (
+        msg.get("created_at")
+        or msg.get("timestamp")
+        or msg.get("time")
+        or msg.get("date")
+        or ""
+    )
+
+
 def _ensure_message_shape(trip: dict, data: dict) -> None:
     changed = False
     for msg in trip.get("messages", []):
         if not msg.get("id"):
             msg["id"] = new_id()
             changed = True
+
+        normalized_author = _message_author(msg)
+        if msg.get("author") != normalized_author:
+            msg["author"] = normalized_author
+            changed = True
+
+        normalized_text = _message_text(msg)
+        if msg.get("text") != normalized_text:
+            msg["text"] = normalized_text
+            changed = True
+
+        normalized_created_at = _message_timestamp(msg)
+        if normalized_created_at and msg.get("created_at") != normalized_created_at:
+            msg["created_at"] = normalized_created_at
+            changed = True
+
         if "reactions" not in msg or not isinstance(msg.get("reactions"), dict):
             msg["reactions"] = {}
             changed = True
+
     if changed:
         save_db(data)
 
@@ -89,8 +160,8 @@ def render_chat(data: dict, trip_key: str, user: str) -> None:
 
         outer_left, outer_right = st.columns([18, 2])
         with outer_left:
-            safe_author = html.escape(str(msg.get("author", "Unbekannt")))
-            safe_text = html.escape(str(msg.get("text", ""))).replace("\n", "<br>")
+            safe_author = html.escape(_message_author(msg))
+            safe_text = html.escape(_message_text(msg)).replace("\n", "<br>")
             summary = _reaction_summary_html(msg, user)
 
             st.markdown(
@@ -98,7 +169,7 @@ def render_chat(data: dict, trip_key: str, user: str) -> None:
                     "<div class='me-chat-row'>"
                     "<div class='me-chat-head'>"
                     f"<div class='me-chat-author'>{safe_author}</div>"
-                    f"<div class='me-soft'>{_format_ts(msg.get('created_at', ''))}</div>"
+                    f"<div class='me-soft'>{_format_ts(_message_timestamp(msg))}</div>"
                     "</div>"
                     f"<div class='me-chat-text'>{safe_text}</div>"
                     f"{summary}"
@@ -120,7 +191,7 @@ def render_chat(data: dict, trip_key: str, user: str) -> None:
                                     st.rerun()
 
         with outer_right:
-            can_delete = role == "admin" or msg.get("author") == user
+            can_delete = role == "admin" or _message_author(msg) == user
             if can_delete:
                 if st.button("🗑️", key=f"delete_msg_{trip_key}_{msg_id}", help="Nachricht löschen", use_container_width=True):
                     trip["messages"] = [m for m in trip.get("messages", []) if m.get("id") != msg_id]
@@ -138,6 +209,7 @@ def render_chat(data: dict, trip_key: str, user: str) -> None:
                     {
                         "id": new_id(),
                         "author": user,
+                        "created_by": user,
                         "text": text.strip(),
                         "created_at": datetime.datetime.now().isoformat(timespec="minutes"),
                         "reactions": {},
