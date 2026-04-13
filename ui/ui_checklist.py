@@ -21,7 +21,6 @@ except Exception:
     stringWidth = None
 
 CATEGORY_OPTIONS = ["Ausrüstung", "Verpflegung", "Sonstiges"]
-PRIORITY_OPTIONS = ["Hoch", "Mittel", "Niedrig"]
 
 TEMPLATES = {
     "Camping": [
@@ -63,11 +62,6 @@ def _task_category(task: dict) -> str:
     return category if category in CATEGORY_OPTIONS else "Sonstiges"
 
 
-def _task_priority(task: dict) -> str:
-    priority = str(task.get("priority") or "").strip()
-    return priority if priority in PRIORITY_OPTIONS else "Mittel"
-
-
 def _matches_person_filter(task: dict, selected_person: str) -> bool:
     if selected_person == "Alle":
         return True
@@ -89,13 +83,10 @@ def _matches_status_filter(task: dict, selected_status: str) -> bool:
 
 
 def _sort_tasks(tasks: list[dict], sort_mode: str) -> list[dict]:
-    priority_rank = {"Hoch": 0, "Mittel": 1, "Niedrig": 2}
-    if sort_mode == "Priorität":
-        return sorted(tasks, key=lambda t: (priority_rank.get(_task_priority(t), 1), _task_done(t), t.get("due_date") or "9999-12-31"))
-    if sort_mode == "Fälligkeitsdatum":
-        return sorted(tasks, key=lambda t: (t.get("due_date") or "9999-12-31", _task_done(t), priority_rank.get(_task_priority(t), 1)))
     if sort_mode == "Status":
-        return sorted(tasks, key=lambda t: (_task_done(t), priority_rank.get(_task_priority(t), 1), t.get("due_date") or "9999-12-31"))
+        return sorted(tasks, key=lambda t: (_task_done(t), _task_text(t).lower()))
+    if sort_mode == "Name":
+        return sorted(tasks, key=lambda t: _task_text(t).lower())
     return tasks
 
 
@@ -171,14 +162,12 @@ def _generate_checklist_pdf(trip_name: str, selected_person: str, selected_categ
     for task in tasks:
         text = _task_text(task)
         category = _task_category(task)
-        priority = _task_priority(task)
-        due = task.get("due_date") or "–"
         assignees = "Für alle" if _task_for_all(task) else ", ".join(_task_assignees(task)) or "Nicht zugewiesen"
         checked = _task_done(task)
 
         content_width = (right - left) - 12 * mm
         text_lines = _wrap_text(c, text, "Helvetica-Bold", 11, content_width)
-        meta_lines = _wrap_text(c, f"Kategorie: {category} | Priorität: {priority} | Fällig: {due} | Zuständig: {assignees}", "Helvetica", 9, content_width)
+        meta_lines = _wrap_text(c, f"Kategorie: {category} | Zuständig: {assignees}", "Helvetica", 9, content_width)
         line_height = 5 * mm
         block_height = max(14 * mm, (len(text_lines) + len(meta_lines)) * line_height + 5 * mm)
 
@@ -230,7 +219,7 @@ def render_checklist(data: dict, trip_key: str, user: str) -> None:
     with filter_col3:
         selected_status = st.selectbox("Status", ["Alle", "Offen", "Erledigt"], key=f"checklist_status_filter_{trip_key}")
     with filter_col4:
-        sort_mode = st.selectbox("Sortierung", ["Standard", "Priorität", "Fälligkeitsdatum", "Status"], key=f"checklist_sort_{trip_key}")
+        sort_mode = st.selectbox("Sortierung", ["Standard", "Name", "Status"], key=f"checklist_sort_{trip_key}")
 
     filtered_tasks = _build_filtered_tasks(tasks, selected_person, selected_category, selected_status, sort_mode)
 
@@ -250,8 +239,6 @@ def render_checklist(data: dict, trip_key: str, user: str) -> None:
                                 "category": category,
                                 "for_all": True,
                                 "done": False,
-                                "priority": "Mittel",
-                                "due_date": "",
                                 "created_by": user,
                                 "created_at": now,
                                 "updated_by": user,
@@ -277,15 +264,12 @@ def render_checklist(data: dict, trip_key: str, user: str) -> None:
     can_edit = role in {"admin", "editor", "member"}
     if can_edit:
         with st.expander("➕ Neues Element hinzufügen", expanded=False):
-            form_col1, form_col2, form_col3 = st.columns([3, 1.3, 1.4])
+            form_col1, form_col2 = st.columns([3, 2])
             with form_col1:
                 item_text = st.text_input("Was wird benötigt?", key=f"checklist_text_{trip_key}", placeholder="z. B. Gaskocher, Zelt, Würstchen ...")
                 assignees = st.multiselect("Wer bringt es mit?", participant_names, key=f"checklist_assignees_{trip_key}", placeholder="Optionen auswählen")
             with form_col2:
                 category = st.selectbox("Kategorie", CATEGORY_OPTIONS, key=f"checklist_category_{trip_key}")
-                priority = st.selectbox("Priorität", PRIORITY_OPTIONS, key=f"checklist_priority_{trip_key}")
-            with form_col3:
-                due_date = st.date_input("Fällig bis", value=None, key=f"checklist_due_{trip_key}")
                 for_all = st.checkbox("Für alle", key=f"checklist_for_all_{trip_key}")
 
             if st.button("Hinzufügen", key=f"checklist_add_button_{trip_key}", use_container_width=False):
@@ -299,8 +283,6 @@ def render_checklist(data: dict, trip_key: str, user: str) -> None:
                             "category": category,
                             "for_all": for_all,
                             "done": False,
-                            "priority": priority,
-                            "due_date": str(due_date) if due_date else "",
                             "created_by": user,
                             "created_at": now,
                             "updated_by": user,
@@ -316,19 +298,14 @@ def render_checklist(data: dict, trip_key: str, user: str) -> None:
         st.info("Keine Checklisten-Einträge für die aktuellen Filter vorhanden.")
         return
 
-    prio_class = {"Hoch": "me-pill-prio-hoch", "Mittel": "me-pill-prio-mittel", "Niedrig": "me-pill-prio-niedrig"}
-
     for task in filtered_tasks:
         task_id = task.get("id")
         row = st.columns([12, 3, 1.2])
         with row[0]:
             assignee_text = "Für alle" if task.get("for_all") else ", ".join(task.get("assignees", [])) or "Nicht zugewiesen"
-            due_text = task.get("due_date") or "Kein Datum"
             badges = (
                 f"<span class='me-pill me-pill-muted'>{_task_category(task)}</span> "
-                f"<span class='me-pill {prio_class.get(_task_priority(task), 'me-pill-prio-mittel')}'>{_task_priority(task)}</span> "
-                f"<span class='me-pill me-pill-muted'>{assignee_text}</span> "
-                f"<span class='me-pill me-pill-muted'>Fällig: {due_text}</span>"
+                f"<span class='me-pill me-pill-muted'>{assignee_text}</span>"
             )
             st.markdown(badges, unsafe_allow_html=True)
             checked = st.checkbox(_task_text(task), value=_task_done(task), key=f"task_done_{trip_key}_{task_id}")
@@ -346,14 +323,10 @@ def render_checklist(data: dict, trip_key: str, user: str) -> None:
             if role in {"admin", "editor"} or task.get("created_by") == user:
                 with st.popover("Bearbeiten", use_container_width=True):
                     edit_text = st.text_input("Text", value=_task_text(task), key=f"task_edit_text_{trip_key}_{task_id}")
-                    edit_priority = st.selectbox("Priorität", PRIORITY_OPTIONS, index=PRIORITY_OPTIONS.index(_task_priority(task)), key=f"task_edit_priority_{trip_key}_{task_id}")
-                    edit_due = st.text_input("Fälligkeitsdatum", value=task.get("due_date") or "", key=f"task_edit_due_{trip_key}_{task_id}", placeholder="YYYY-MM-DD")
                     if st.button("Speichern", key=f"task_edit_save_{trip_key}_{task_id}", use_container_width=True):
                         for real_task in trip.get("tasks", []):
                             if real_task.get("id") == task_id:
                                 real_task["text"] = edit_text.strip() or _task_text(task)
-                                real_task["priority"] = edit_priority
-                                real_task["due_date"] = edit_due.strip()
                                 real_task["updated_by"] = user
                                 real_task["updated_at"] = datetime.datetime.now().isoformat(timespec="minutes")
                                 break
