@@ -74,7 +74,6 @@ def apply_theme() -> None:
         div[data-testid="stTextInputRoot"] input,
         div[data-testid="stTextArea"] textarea,
         div[data-testid="stNumberInput"] input,
-        div[data-testid="stDateInput"] input,
         .stTimeInput input,
         .stTextInput input,
         .stTextArea textarea,
@@ -93,23 +92,41 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Date fields: closed input, icons, placeholder */
+        /* Force date fields readable */
+        div[data-testid="stDateInput"] {
+          color: #f8fbff !important;
+        }
+
+        div[data-testid="stDateInput"] > div,
+        div[data-testid="stDateInput"] [data-baseweb="input"] {
+          background: rgba(33, 47, 80, 0.96) !important;
+          border: 1px solid rgba(130, 153, 196, 0.18) !important;
+          border-radius: 16px !important;
+        }
+
         div[data-testid="stDateInput"] input,
         div[data-testid="stDateInput"] input:focus,
         div[data-testid="stDateInput"] input:active,
+        div[data-testid="stDateInput"] [data-baseweb="input"] input,
+        div[data-testid="stDateInput"] [data-baseweb="input"] input:focus,
+        div[data-testid="stDateInput"] [data-baseweb="input"] input:active,
         .stDateInput input,
         .stDateInput input:focus,
         .stDateInput input:active {
-          background: rgba(33, 47, 80, 0.01) !important;
-          color: #f8fbff !important;
-          -webkit-text-fill-color: #f8fbff !important;
+          background: transparent !important;
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
           opacity: 1 !important;
+          caret-color: #ffffff !important;
         }
 
-        div[data-testid="stDateInput"] svg,
-        .stDateInput svg {
-          fill: #f8fbff !important;
-          color: #f8fbff !important;
+        div[data-testid="stDateInput"] input[disabled],
+        div[data-testid="stDateInput"] input:disabled,
+        .stDateInput input[disabled],
+        .stDateInput input:disabled {
+          background: transparent !important;
+          color: #eef4ff !important;
+          -webkit-text-fill-color: #eef4ff !important;
           opacity: 1 !important;
         }
 
@@ -120,7 +137,17 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Date picker popup */
+        div[data-testid="stDateInput"] svg,
+        div[data-testid="stDateInput"] button,
+        div[data-testid="stDateInput"] button svg,
+        .stDateInput svg {
+          color: #f8fbff !important;
+          fill: #f8fbff !important;
+          stroke: #f8fbff !important;
+          opacity: 1 !important;
+        }
+
+        /* Calendar popup */
         div[role="dialog"],
         div[role="dialog"] * {
           color: #f7f9fc !important;
@@ -138,6 +165,7 @@ def apply_theme() -> None:
         div[role="dialog"] [role="button"] {
           color: #f7f9fc !important;
           -webkit-text-fill-color: #f7f9fc !important;
+          background: transparent !important;
         }
 
         div[role="dialog"] button:hover,
@@ -174,7 +202,6 @@ def apply_theme() -> None:
         div[data-testid="stTextInputRoot"] input:disabled,
         div[data-testid="stTextArea"] textarea:disabled,
         div[data-testid="stNumberInput"] input:disabled,
-        div[data-testid="stDateInput"] input:disabled,
         .stTimeInput input:disabled,
         .stTextInput input:disabled,
         input[disabled],
