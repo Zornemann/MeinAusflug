@@ -9,10 +9,12 @@ def apply_theme() -> None:
         <style>
         :root {
           --bg: #0b1020;
+          --card: rgba(20, 28, 48, 0.82);
           --card-2: rgba(33, 47, 80, 0.96);
           --text: #f7f9fc;
           --muted: #aeb8cc;
           --border: rgba(130, 153, 196, 0.18);
+          --accent: #7c9cff;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
         }
 
@@ -42,7 +44,7 @@ def apply_theme() -> None:
         }
 
         div[data-testid="stMetric"] {
-          background: rgba(20, 28, 48, 0.82);
+          background: var(--card);
           border: 1px solid var(--border);
           box-shadow: var(--shadow);
           border-radius: 20px;
@@ -83,7 +85,7 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Date field */
+        /* Date input field */
         div[data-testid="stDateInput"] > div,
         div[data-testid="stDateInput"] [data-baseweb="input"] {
           background: rgba(33, 47, 80, 0.96) !important;
@@ -101,6 +103,16 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        div[data-testid="stDateInput"] input[disabled],
+        div[data-testid="stDateInput"] input:disabled,
+        .stDateInput input[disabled],
+        .stDateInput input:disabled {
+          background: transparent !important;
+          color: #eef4ff !important;
+          -webkit-text-fill-color: #eef4ff !important;
+          opacity: 1 !important;
+        }
+
         div[data-testid="stDateInput"] svg,
         div[data-testid="stDateInput"] button,
         div[data-testid="stDateInput"] button svg,
@@ -111,103 +123,45 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Calendar popup background */
-        div[role="dialog"] > div,
-        div[role="dialog"] [data-baseweb="calendar"],
-        div[role="dialog"] [data-baseweb="calendar"] > div,
-        div[role="dialog"] [data-baseweb="calendar"] > div > div {
+        /* Minimal, safer calendar popup styling */
+        div[role="dialog"] > div {
           background: rgba(17, 24, 43, 0.995) !important;
+          border: 1px solid rgba(130, 153, 196, 0.18) !important;
           border-radius: 18px !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,.28) !important;
+        }
+
+        div[role="dialog"] button,
+        div[role="dialog"] select,
+        div[role="dialog"] option,
+        div[role="dialog"] th,
+        div[role="dialog"] td,
+        div[role="dialog"] span,
+        div[role="dialog"] label {
           color: #f7f9fc !important;
           -webkit-text-fill-color: #f7f9fc !important;
         }
 
-        /* Header/month row */
-        div[role="dialog"] [data-baseweb="calendar"] header,
-        div[role="dialog"] [data-baseweb="calendar"] nav,
-        div[role="dialog"] [data-baseweb="calendar"] [role="heading"],
-        div[role="dialog"] [data-baseweb="calendar"] select,
-        div[role="dialog"] [data-baseweb="calendar"] option,
-        div[role="dialog"] [data-baseweb="calendar"] button {
-          background: transparent !important;
+        div[role="dialog"] svg {
           color: #f7f9fc !important;
-          -webkit-text-fill-color: #f7f9fc !important;
           fill: #f7f9fc !important;
           stroke: #f7f9fc !important;
-          opacity: 1 !important;
         }
 
-        /* Weekday names */
-        div[role="dialog"] [data-baseweb="calendar"] thead,
-        div[role="dialog"] [data-baseweb="calendar"] thead *,
-        div[role="dialog"] [data-baseweb="calendar"] th,
-        div[role="dialog"] [data-baseweb="calendar"] th * {
-          background: rgba(17, 24, 43, 0.995) !important;
-          color: #d7e1f8 !important;
-          -webkit-text-fill-color: #d7e1f8 !important;
-          opacity: 1 !important;
-        }
-
-        /* Day grid and cells */
-        div[role="dialog"] [data-baseweb="calendar"] table,
-        div[role="dialog"] [data-baseweb="calendar"] tbody,
-        div[role="dialog"] [data-baseweb="calendar"] tr,
-        div[role="dialog"] [data-baseweb="calendar"] td {
-          background: rgba(17, 24, 43, 0.995) !important;
-          color: #f7f9fc !important;
-          -webkit-text-fill-color: #f7f9fc !important;
-          opacity: 1 !important;
-        }
-
-        div[role="dialog"] [data-baseweb="calendar"] td button,
-        div[role="dialog"] [data-baseweb="calendar"] td [role="button"],
-        div[role="dialog"] [data-baseweb="calendar"] td span,
-        div[role="dialog"] [data-baseweb="calendar"] td div {
-          background: transparent !important;
-          color: #f7f9fc !important;
-          -webkit-text-fill-color: #f7f9fc !important;
-          opacity: 1 !important;
-          border-radius: 999px !important;
-        }
-
-        /* Outside month / disabled days */
-        div[role="dialog"] [data-baseweb="calendar"] td button[disabled],
-        div[role="dialog"] [data-baseweb="calendar"] td [disabled],
-        div[role="dialog"] [data-baseweb="calendar"] td [aria-disabled="true"] {
-          color: #8fa0c3 !important;
-          -webkit-text-fill-color: #8fa0c3 !important;
-          opacity: 1 !important;
-        }
-
-        /* Hover and selected day */
-        div[role="dialog"] [data-baseweb="calendar"] td button:hover,
-        div[role="dialog"] [data-baseweb="calendar"] td [role="button"]:hover {
+        div[role="dialog"] button:hover {
           background: rgba(124,156,255,.18) !important;
-          color: #ffffff !important;
         }
 
-        div[role="dialog"] [data-baseweb="calendar"] td[aria-selected="true"],
-        div[role="dialog"] [data-baseweb="calendar"] td[aria-selected="true"] *,
-        div[role="dialog"] [data-baseweb="calendar"] button[aria-selected="true"],
-        div[role="dialog"] [data-baseweb="calendar"] button[aria-selected="true"] * {
-          background: rgba(124,156,255,.30) !important;
+        div[role="dialog"] button[aria-selected="true"],
+        div[role="dialog"] td[aria-selected="true"] button,
+        div[role="dialog"] td[aria-selected="true"] {
+          background: rgba(124,156,255,.28) !important;
           color: #ffffff !important;
           -webkit-text-fill-color: #ffffff !important;
           border-radius: 999px !important;
         }
 
-        /* Weird light bars inside popup */
-        div[role="dialog"] input,
-        div[role="dialog"] textarea,
-        div[role="dialog"] [contenteditable="true"] {
-          background: rgba(17, 24, 43, 0.995) !important;
-          color: #f7f9fc !important;
-          -webkit-text-fill-color: #f7f9fc !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-
-        /* Selects */
+        /* Dropdowns */
         div[data-baseweb="select"] *,
         div[data-baseweb="select"] svg,
         div[data-baseweb="select"] input,
@@ -240,6 +194,7 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        /* Buttons */
         .stButton > button,
         .stDownloadButton > button,
         .stLinkButton > a,
@@ -256,6 +211,7 @@ def apply_theme() -> None:
           box-shadow: var(--shadow);
         }
 
+        /* Top nav */
         div[role="radiogroup"] {
           position: sticky;
           top: 0.35rem;
