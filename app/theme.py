@@ -93,6 +93,76 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        /* Date fields: closed input, icons, placeholder */
+        div[data-testid="stDateInput"] input,
+        div[data-testid="stDateInput"] input:focus,
+        div[data-testid="stDateInput"] input:active,
+        .stDateInput input,
+        .stDateInput input:focus,
+        .stDateInput input:active {
+          background: rgba(33, 47, 80, 0.01) !important;
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          opacity: 1 !important;
+        }
+
+        div[data-testid="stDateInput"] svg,
+        .stDateInput svg {
+          fill: #f8fbff !important;
+          color: #f8fbff !important;
+          opacity: 1 !important;
+        }
+
+        div[data-testid="stDateInput"] input::placeholder,
+        .stDateInput input::placeholder {
+          color: #c7d3ef !important;
+          -webkit-text-fill-color: #c7d3ef !important;
+          opacity: 1 !important;
+        }
+
+        /* Date picker popup */
+        div[role="dialog"],
+        div[role="dialog"] * {
+          color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
+        }
+
+        div[role="dialog"] > div {
+          background: rgba(17, 24, 43, 0.995) !important;
+          border: 1px solid rgba(130, 153, 196, 0.18) !important;
+          border-radius: 18px !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,.28) !important;
+        }
+
+        div[role="dialog"] button,
+        div[role="dialog"] [role="button"] {
+          color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
+        }
+
+        div[role="dialog"] button:hover,
+        div[role="dialog"] [role="button"]:hover {
+          background: rgba(124,156,255,.18) !important;
+        }
+
+        div[role="dialog"] table,
+        div[role="dialog"] thead,
+        div[role="dialog"] tbody,
+        div[role="dialog"] tr,
+        div[role="dialog"] th,
+        div[role="dialog"] td {
+          background: transparent !important;
+          color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
+        }
+
+        div[role="dialog"] td[aria-selected="true"],
+        div[role="dialog"] button[aria-selected="true"] {
+          background: rgba(124,156,255,.26) !important;
+          color: #ffffff !important;
+          border-radius: 999px !important;
+        }
+
         .stTextInput input,
         .stTextInput input:focus,
         .stTextInput input:active {
@@ -375,9 +445,6 @@ def apply_theme() -> None:
         }
 
         .me-reaction-pill.me-active { background: rgba(124,156,255,.28); border-color: rgba(148,173,255,.62); }
-        .me-pill-prio-hoch { background: rgba(251,113,133,.18); border-color: rgba(251,113,133,.35); }
-        .me-pill-prio-mittel { background: rgba(251,191,36,.18); border-color: rgba(251,191,36,.35); }
-        .me-pill-prio-niedrig { background: rgba(52,211,153,.18); border-color: rgba(52,211,153,.35); }
         .me-pill-muted { background: rgba(130,153,196,.14); border-color: rgba(130,153,196,.24); }
 
         @media (max-width: 768px) {
