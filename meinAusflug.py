@@ -56,6 +56,42 @@ def _clean_candidates(candidates: Iterable[str]) -> list[str]:
     return seen
 
 
+def _parse_iso_date_or_default(raw: str | None) -> datetime.date:
+    try:
+        return datetime.date.fromisoformat(str(raw))
+    except Exception:
+        return datetime.date.today()
+
+
+def _render_safe_date_input(label: str, value: str, key: str, disabled: bool = False) -> tuple[str, bool]:
+    current_date = _parse_iso_date_or_default(value)
+    default_text = current_date.isoformat()
+
+    entered = st.text_input(
+        label,
+        value=default_text,
+        key=key,
+        disabled=disabled,
+        placeholder="YYYY-MM-DD",
+        help="Datumsformat: YYYY-MM-DD",
+    )
+
+    if disabled:
+        return default_text, True
+
+    text = (entered or "").strip()
+    if not text:
+        st.caption("Bitte Datum im Format YYYY-MM-DD eingeben.")
+        return default_text, False
+
+    try:
+        parsed = datetime.date.fromisoformat(text)
+        return parsed.isoformat(), True
+    except ValueError:
+        st.caption("Ungültiges Datum. Bitte YYYY-MM-DD verwenden.")
+        return default_text, False
+
+
 @st.cache_data(show_spinner=False, ttl=86400)
 def geocode_location(*location_candidates: str):
     queries = _clean_candidates(location_candidates)
@@ -260,12 +296,29 @@ if selected == "overview":
         postal_code = st.text_input("Postleitzahl", details.get("postal_code", ""), disabled=not can_edit)
         homepage = st.text_input("Startseite", details.get("homepage", ""), disabled=not can_edit)
     with c2:
-        start = st.date_input("Start", value=datetime.date.fromisoformat(details.get("start_date", str(datetime.date.today()))) if details.get("start_date") else datetime.date.today(), disabled=not can_edit)
-        end = st.date_input("Ende", value=datetime.date.fromisoformat(details.get("end_date", str(datetime.date.today()))) if details.get("end_date") else datetime.date.today(), disabled=not can_edit)
-        meet_date = st.date_input("Treffpunkt Datum", value=datetime.date.fromisoformat(details.get("meet_date", str(datetime.date.today()))) if details.get("meet_date") else datetime.date.today(), disabled=not can_edit)
+        start_date_value, start_ok = _render_safe_date_input(
+            "Start",
+            details.get("start_date", str(datetime.date.today())),
+            key=f"start_safe_{trip_key}",
+            disabled=not can_edit,
+        )
+        end_date_value, end_ok = _render_safe_date_input(
+            "Ende",
+            details.get("end_date", str(datetime.date.today())),
+            key=f"end_safe_{trip_key}",
+            disabled=not can_edit,
+        )
+        meet_date_value, meet_ok = _render_safe_date_input(
+            "Treffpunkt Datum",
+            details.get("meet_date", str(datetime.date.today())),
+            key=f"meet_safe_{trip_key}",
+            disabled=not can_edit,
+        )
         meet_time = st.time_input("Treffpunkt Uhrzeit", value=_parse_time(details.get("meet_time", "18:00")), disabled=not can_edit)
 
     extra = st.text_area("Zusätzliche Informationen", details.get("extra", ""), disabled=not can_edit)
+
+    dates_valid = start_ok and end_ok and meet_ok
 
     new_details = {
         **details,
@@ -274,13 +327,13 @@ if selected == "overview":
         "street": street,
         "postal_code": postal_code,
         "homepage": homepage,
-        "start_date": str(start),
-        "end_date": str(end),
-        "meet_date": str(meet_date),
+        "start_date": start_date_value,
+        "end_date": end_date_value,
+        "meet_date": meet_date_value,
         "meet_time": meet_time.strftime("%H:%M"),
         "extra": extra,
     }
-    if can_edit and new_details != details:
+    if can_edit and dates_valid and new_details != details:
         trip["details"] = new_details
         save_db(data)
 
@@ -292,7 +345,11 @@ if selected == "overview":
     if homepage:
         st.link_button("🌐 Homepage öffnen", homepage, use_container_width=True)
 
-    st.caption(f"Treffpunkt: {meet_date.strftime('%d.%m.%Y')} um {meet_time.strftime('%H:%M')} Uhr")
+    try:
+        meet_date_display = datetime.date.fromisoformat(meet_date_value).strftime("%d.%m.%Y")
+    except Exception:
+        meet_date_display = meet_date_value
+    st.caption(f"Treffpunkt: {meet_date_display} um {meet_time.strftime('%H:%M')} Uhr")
 
     weather_candidates = [f"{postal_code} {city}".strip(), city, destination]
     location, location_error = geocode_location(*weather_candidates)
