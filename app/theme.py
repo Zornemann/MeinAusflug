@@ -14,7 +14,6 @@ def apply_theme() -> None:
           --text: #f7f9fc;
           --muted: #aeb8cc;
           --border: rgba(130, 153, 196, 0.18);
-          --accent: #7c9cff;
           --shadow: 0 10px 30px rgba(0,0,0,.22);
         }
 
@@ -67,6 +66,7 @@ def apply_theme() -> None:
         div[data-testid="stTextInputRoot"] input,
         div[data-testid="stTextArea"] textarea,
         div[data-testid="stNumberInput"] input,
+        div[data-testid="stDateInput"] input,
         .stTimeInput input,
         .stTextInput input,
         .stTextArea textarea,
@@ -85,7 +85,38 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Date input field */
+        .stTextInput input,
+        .stTextInput input:focus,
+        .stTextInput input:active {
+          background-color: rgba(33, 47, 80, 0.01) !important;
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+        }
+
+        div[data-testid="stTextInputRoot"] input:disabled,
+        div[data-testid="stTextArea"] textarea:disabled,
+        div[data-testid="stNumberInput"] input:disabled,
+        div[data-testid="stDateInput"] input:disabled,
+        .stTimeInput input:disabled,
+        .stTextInput input:disabled,
+        input[disabled],
+        textarea[disabled],
+        input[readonly],
+        textarea[readonly] {
+          background: transparent !important;
+          color: #eef4ff !important;
+          -webkit-text-fill-color: #eef4ff !important;
+          opacity: 1 !important;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+          color: #9fb0d4 !important;
+          opacity: 1 !important;
+          -webkit-text-fill-color: #9fb0d4 !important;
+        }
+
+        /* Closed date fields dark and readable */
         div[data-testid="stDateInput"] > div,
         div[data-testid="stDateInput"] [data-baseweb="input"] {
           background: rgba(33, 47, 80, 0.96) !important;
@@ -95,22 +126,18 @@ def apply_theme() -> None:
 
         div[data-testid="stDateInput"] input,
         div[data-testid="stDateInput"] input:focus,
+        div[data-testid="stDateInput"] input:active,
         div[data-testid="stDateInput"] [data-baseweb="input"] input,
-        .stDateInput input {
+        div[data-testid="stDateInput"] [data-baseweb="input"] input:focus,
+        div[data-testid="stDateInput"] [data-baseweb="input"] input:active,
+        .stDateInput input,
+        .stDateInput input:focus,
+        .stDateInput input:active {
           background: transparent !important;
           color: #ffffff !important;
           -webkit-text-fill-color: #ffffff !important;
           opacity: 1 !important;
-        }
-
-        div[data-testid="stDateInput"] input[disabled],
-        div[data-testid="stDateInput"] input:disabled,
-        .stDateInput input[disabled],
-        .stDateInput input:disabled {
-          background: transparent !important;
-          color: #eef4ff !important;
-          -webkit-text-fill-color: #eef4ff !important;
-          opacity: 1 !important;
+          caret-color: #ffffff !important;
         }
 
         div[data-testid="stDateInput"] svg,
@@ -123,45 +150,72 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Minimal, safer calendar popup styling */
+        /* Calendar popup: light popup with dark text */
         div[role="dialog"] > div {
-          background: rgba(17, 24, 43, 0.995) !important;
-          border: 1px solid rgba(130, 153, 196, 0.18) !important;
+          background: #ffffff !important;
+          border: 1px solid rgba(15, 23, 42, 0.12) !important;
           border-radius: 18px !important;
-          box-shadow: 0 10px 30px rgba(0,0,0,.28) !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,.25) !important;
         }
 
-        div[role="dialog"] button,
-        div[role="dialog"] select,
-        div[role="dialog"] option,
-        div[role="dialog"] th,
-        div[role="dialog"] td,
+        div[role="dialog"],
+        div[role="dialog"] *,
         div[role="dialog"] span,
-        div[role="dialog"] label {
-          color: #f7f9fc !important;
-          -webkit-text-fill-color: #f7f9fc !important;
+        div[role="dialog"] div,
+        div[role="dialog"] button,
+        div[role="dialog"] td,
+        div[role="dialog"] th,
+        div[role="dialog"] label,
+        div[role="dialog"] select,
+        div[role="dialog"] option {
+          color: #1f2937 !important;
+          -webkit-text-fill-color: #1f2937 !important;
+          text-shadow: none !important;
+        }
+
+        div[role="dialog"] table,
+        div[role="dialog"] thead,
+        div[role="dialog"] tbody,
+        div[role="dialog"] tr,
+        div[role="dialog"] th,
+        div[role="dialog"] td {
+          background: #ffffff !important;
         }
 
         div[role="dialog"] svg {
-          color: #f7f9fc !important;
-          fill: #f7f9fc !important;
-          stroke: #f7f9fc !important;
+          color: #1f2937 !important;
+          fill: #1f2937 !important;
+          stroke: #1f2937 !important;
         }
 
-        div[role="dialog"] button:hover {
-          background: rgba(124,156,255,.18) !important;
-        }
-
-        div[role="dialog"] button[aria-selected="true"],
-        div[role="dialog"] td[aria-selected="true"] button,
-        div[role="dialog"] td[aria-selected="true"] {
-          background: rgba(124,156,255,.28) !important;
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
+        div[role="dialog"] button,
+        div[role="dialog"] [role="button"] {
+          background: transparent !important;
           border-radius: 999px !important;
         }
 
-        /* Dropdowns */
+        div[role="dialog"] button:hover,
+        div[role="dialog"] [role="button"]:hover {
+          background: rgba(124,156,255,.14) !important;
+        }
+
+        div[role="dialog"] button[disabled],
+        div[role="dialog"] [disabled],
+        div[role="dialog"] [aria-disabled="true"] {
+          color: #94a3b8 !important;
+          -webkit-text-fill-color: #94a3b8 !important;
+          opacity: 1 !important;
+        }
+
+        div[role="dialog"] button[aria-selected="true"],
+        div[role="dialog"] button[aria-selected="true"] *,
+        div[role="dialog"] td[aria-selected="true"],
+        div[role="dialog"] td[aria-selected="true"] * {
+          background: rgba(239, 68, 68, 0.14) !important;
+          color: #0f172a !important;
+          -webkit-text-fill-color: #0f172a !important;
+        }
+
         div[data-baseweb="select"] *,
         div[data-baseweb="select"] svg,
         div[data-baseweb="select"] input,
@@ -194,7 +248,15 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
-        /* Buttons */
+        [role="listbox"] [role="option"] *,
+        ul[data-baseweb="menu"] li *,
+        div[data-baseweb="popover"] [role="option"] * {
+          background: transparent !important;
+          color: #f7f9fc !important;
+          -webkit-text-fill-color: #f7f9fc !important;
+          opacity: 1 !important;
+        }
+
         .stButton > button,
         .stDownloadButton > button,
         .stLinkButton > a,
@@ -208,10 +270,27 @@ def apply_theme() -> None:
           min-height: 2.85rem;
           color: #f8fbff !important;
           -webkit-text-fill-color: #f8fbff !important;
+          fill: #f8fbff !important;
+          stroke: #f8fbff !important;
+          font-weight: 700 !important;
+          opacity: 1 !important;
           box-shadow: var(--shadow);
         }
 
-        /* Top nav */
+        .stButton > button *,
+        .stDownloadButton > button *,
+        .stLinkButton > a *,
+        div[data-testid="stForm"] button *,
+        div[data-testid="stPopoverButton"] button *,
+        button[kind] *,
+        button[data-testid] * {
+          color: #f8fbff !important;
+          -webkit-text-fill-color: #f8fbff !important;
+          fill: #f8fbff !important;
+          stroke: #f8fbff !important;
+          opacity: 1 !important;
+        }
+
         div[role="radiogroup"] {
           position: sticky;
           top: 0.35rem;
