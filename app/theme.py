@@ -31,7 +31,7 @@ def apply_theme() -> None:
 
         .block-container {
           max-width: 1120px;
-          padding-top: 0.25rem;
+          padding-top: 0.4rem;
           padding-bottom: 4rem;
         }
 
@@ -48,6 +48,11 @@ def apply_theme() -> None:
           box-shadow: var(--shadow);
           border-radius: 20px;
           padding: 0.95rem 1rem;
+        }
+
+        div[data-testid="stMetric"] label,
+        div[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+          color: #c8d5f4 !important;
         }
 
         div[data-testid="stTextInputRoot"] > div,
@@ -116,7 +121,6 @@ def apply_theme() -> None:
           -webkit-text-fill-color: #9fb0d4 !important;
         }
 
-        /* Closed date fields dark and readable */
         div[data-testid="stDateInput"] > div,
         div[data-testid="stDateInput"] [data-baseweb="input"] {
           background: rgba(33, 47, 80, 0.96) !important;
@@ -126,18 +130,12 @@ def apply_theme() -> None:
 
         div[data-testid="stDateInput"] input,
         div[data-testid="stDateInput"] input:focus,
-        div[data-testid="stDateInput"] input:active,
         div[data-testid="stDateInput"] [data-baseweb="input"] input,
-        div[data-testid="stDateInput"] [data-baseweb="input"] input:focus,
-        div[data-testid="stDateInput"] [data-baseweb="input"] input:active,
-        .stDateInput input,
-        .stDateInput input:focus,
-        .stDateInput input:active {
+        .stDateInput input {
           background: transparent !important;
           color: #ffffff !important;
           -webkit-text-fill-color: #ffffff !important;
           opacity: 1 !important;
-          caret-color: #ffffff !important;
         }
 
         div[data-testid="stDateInput"] svg,
@@ -148,72 +146,6 @@ def apply_theme() -> None:
           fill: #f8fbff !important;
           stroke: #f8fbff !important;
           opacity: 1 !important;
-        }
-
-        /* Calendar popup: light popup with dark text */
-        div[role="dialog"] > div {
-          background: #ffffff !important;
-          border: 1px solid rgba(15, 23, 42, 0.12) !important;
-          border-radius: 18px !important;
-          box-shadow: 0 10px 30px rgba(0,0,0,.25) !important;
-        }
-
-        div[role="dialog"],
-        div[role="dialog"] *,
-        div[role="dialog"] span,
-        div[role="dialog"] div,
-        div[role="dialog"] button,
-        div[role="dialog"] td,
-        div[role="dialog"] th,
-        div[role="dialog"] label,
-        div[role="dialog"] select,
-        div[role="dialog"] option {
-          color: #1f2937 !important;
-          -webkit-text-fill-color: #1f2937 !important;
-          text-shadow: none !important;
-        }
-
-        div[role="dialog"] table,
-        div[role="dialog"] thead,
-        div[role="dialog"] tbody,
-        div[role="dialog"] tr,
-        div[role="dialog"] th,
-        div[role="dialog"] td {
-          background: #ffffff !important;
-        }
-
-        div[role="dialog"] svg {
-          color: #1f2937 !important;
-          fill: #1f2937 !important;
-          stroke: #1f2937 !important;
-        }
-
-        div[role="dialog"] button,
-        div[role="dialog"] [role="button"] {
-          background: transparent !important;
-          border-radius: 999px !important;
-        }
-
-        div[role="dialog"] button:hover,
-        div[role="dialog"] [role="button"]:hover {
-          background: rgba(124,156,255,.14) !important;
-        }
-
-        div[role="dialog"] button[disabled],
-        div[role="dialog"] [disabled],
-        div[role="dialog"] [aria-disabled="true"] {
-          color: #94a3b8 !important;
-          -webkit-text-fill-color: #94a3b8 !important;
-          opacity: 1 !important;
-        }
-
-        div[role="dialog"] button[aria-selected="true"],
-        div[role="dialog"] button[aria-selected="true"] *,
-        div[role="dialog"] td[aria-selected="true"],
-        div[role="dialog"] td[aria-selected="true"] * {
-          background: rgba(239, 68, 68, 0.14) !important;
-          color: #0f172a !important;
-          -webkit-text-fill-color: #0f172a !important;
         }
 
         div[data-baseweb="select"] *,
@@ -291,6 +223,18 @@ def apply_theme() -> None:
           opacity: 1 !important;
         }
 
+        div[data-testid="stExpander"] {
+          background: rgba(10,16,31,.38);
+          border: 1px solid rgba(130,153,196,.10);
+          border-radius: 18px;
+          overflow: hidden;
+        }
+
+        div[data-testid="stExpander"] details summary {
+          background: rgba(20, 28, 48, 0.62);
+          border-radius: 18px;
+        }
+
         div[role="radiogroup"] {
           position: sticky;
           top: 0.35rem;
@@ -321,31 +265,74 @@ def apply_theme() -> None:
 
         div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child { display: none !important; }
 
-        @media (max-width: 768px) {
-          .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
+        .me-mobile-note {
+          color: #aeb8cc;
+          font-size: .86rem;
+          margin-top: .2rem;
+          margin-bottom: .35rem;
+        }
+
+        @media (max-width: 900px) {
+          .block-container {
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
+            padding-top: 0.35rem !important;
+          }
+
+          h1 { font-size: 2.2rem !important; }
+          h2 { font-size: 1.6rem !important; }
+          h3 { font-size: 1.3rem !important; }
+
+          section[data-testid="stSidebar"] {
+            display: none !important;
+          }
+
           div[role="radiogroup"] {
             display: grid !important;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.5rem;
-            padding: 0.5rem;
+            gap: 0.45rem;
+            padding: 0.45rem;
             border-radius: 18px;
           }
+
           div[role="radiogroup"] label {
             width: 100% !important;
             min-height: 48px;
-            padding: 0.4rem 0.5rem;
+            padding: 0.45rem 0.5rem;
             border-radius: 14px;
             text-align: center;
             font-size: 0.92rem;
             line-height: 1.1;
           }
-          .stButton > button, .stDownloadButton > button, .stLinkButton > a, div[data-testid="stForm"] button {
+
+          [data-testid="column"] {
+            min-width: 100% !important;
+            flex: 1 1 100% !important;
+            width: 100% !important;
+          }
+
+          div[data-testid="stMetric"] {
+            padding: 0.8rem 0.9rem;
+            border-radius: 18px;
+          }
+
+          .stButton > button,
+          .stDownloadButton > button,
+          .stLinkButton > a,
+          div[data-testid="stForm"] button {
             width: 100%;
+            min-height: 3rem;
+          }
+
+          textarea, input, select {
+            font-size: 16px !important;
           }
         }
 
-        @media (max-width: 460px) {
-          div[role="radiogroup"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 560px) {
+          div[role="radiogroup"] {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
         </style>
         """,

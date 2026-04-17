@@ -244,9 +244,33 @@ check_unread = get_checklist_unread_count(trip, user)
 
 _handle_in_app_notifications(trip_key, chat_unread, check_unread)
 
+notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True})
+
+with st.expander("📱 Reise & Benachrichtigungen", expanded=False):
+    st.markdown("<div class='me-mobile-note'>Auf dem Handy findest du hier Reiseauswahl, Neu laden und Benachrichtigungen kompakt an einem Ort.</div>", unsafe_allow_html=True)
+    mc1, mc2 = st.columns([2.2, 1])
+    with mc1:
+        selected_trip_mobile = st.selectbox(
+            "Reise wählen",
+            trip_keys,
+            index=trip_keys.index(trip_key),
+            key="selected_trip_mobile",
+        )
+    with mc2:
+        st.write("")
+        if st.button("Neu laden", key="reload_mobile", use_container_width=True):
+            st.rerun()
+
+    notify_settings["chat"] = st.checkbox("Neue Chatnachrichten", value=notify_settings.get("chat", True), key="notify_chat_mobile")
+    notify_settings["checklist"] = st.checkbox("Neue Checklisten-Einträge", value=notify_settings.get("checklist", True), key="notify_checklist_mobile")
+    st.caption(f"Rolle: {role}")
+
+    if selected_trip_mobile != st.session_state.selected_trip:
+        st.session_state.selected_trip = selected_trip_mobile
+        st.rerun()
+
 with st.sidebar:
     st.markdown("#### 🔔 Benachrichtigungen")
-    notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True})
     notify_settings["chat"] = st.checkbox("Neue Chatnachrichten", value=notify_settings.get("chat", True), key="notify_chat")
     notify_settings["checklist"] = st.checkbox("Neue Checklisten-Einträge", value=notify_settings.get("checklist", True), key="notify_checklist")
     st.caption("Hinweise erscheinen in der App, solange sie geöffnet ist.")
@@ -352,10 +376,10 @@ if selected == "overview":
     st.caption(f"Treffpunkt: {meet_date_display} um {meet_time.strftime('%H:%M')} Uhr")
 
     weather_candidates = [f"{postal_code} {city}".strip(), city, destination]
-    location, location_error = geocode_location(*weather_candidates)
     weather_label = city or destination or postal_code
     if weather_label:
         st.subheader("🌤️ Wetter")
+        location, location_error = geocode_location(*weather_candidates)
         if location:
             weather, weather_error = get_weather_forecast(location["latitude"], location["longitude"])
             if weather:
@@ -364,7 +388,7 @@ if selected == "overview":
                 current_icon = weather_icon_from_code(current.get("weather_code", 0))
                 wc1, wc2, wc3, wc4 = st.columns([1.15, 1, 1, 1])
                 with wc1:
-                    st.markdown(f"<div style='font-size:64px; line-height:1;'>{current_icon}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='font-size:56px; line-height:1;'>{current_icon}</div>", unsafe_allow_html=True)
                 with wc2:
                     st.metric("Aktuell", f"{current.get('temperature_2m', '–')}°C")
                 with wc3:
