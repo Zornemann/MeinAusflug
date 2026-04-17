@@ -126,7 +126,7 @@ def geocode_location(*location_candidates: str):
         return None, f"Geocoding-Fehler: {type(exc).__name__}: {exc}"
 
 
-@st.cache_data(show_spinner=False, ttl=3600)
+@st.cache_data(show_spinner=False, ttl=21600)
 def get_weather_forecast(latitude: float, longitude: float):
     headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
     try:
@@ -144,13 +144,165 @@ def get_weather_forecast(latitude: float, longitude: float):
             timeout=10,
         )
         if response.status_code == 429:
-            return None, "Wetterdienst hat das Limit erreicht. Bitte später erneut versuchen."
+            return None, "RATE_LIMIT"
         response.raise_for_status()
         return response.json(), None
     except requests.RequestException as exc:
         return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
     except Exception as exc:
         return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
+
+
+def _weather_cache_key(details: dict) -> str:
+    return "|".join(
+        [
+            str(details.get("postal_code", "")).strip(),
+            str(details.get("city", "")).strip(),
+            str(details.get("destination", "")).strip(),
+            str(details.get("street", "")).strip(),
+        ]
+    )
+
+
+def _save_weather_cache(trip: dict, location: dict, weather: dict) -> None:
+    trip["weather_cache"] = {
+        "location": location,
+        "weather": weather,
+        "updated_at": datetime.datetime.now().isoformat(timespec="minutes"),
+    }
+
+
+def _get_cached_weather_if_matching(trip: dict, details: dict):
+    cache = trip.get("weather_cache") or {}
+    if not cache:
+        return None
+    if cache.get("cache_key") != _weather_cache_key(details):
+        return None
+    return cache
+
+
+def _render_weather_block(trip: dict, details: dict, allow_refresh: bool = True) -> None:
+    postal_code = details.get("postal_code", "")
+    city = details.get("city", "")
+    destination = details.get("destination", "")
+    weather_label = city or destination or postal_code
+    if not weather_label:
+        return
+
+    st.subheader("🌤️ Wetter")
+    weather_candidates = [f"{postal_code} {city}".strip(), city, destination]
+    cache_key = _weather_cache_key(details)
+    cached = _get_cached_weather_if_matching(trip, details)
+
+    refresh_clicked = False
+    if allow_refresh:
+        rc1, rc2 = st.columns([1.6, 5])
+        with rc1:
+            refresh_clicked = st.button("Wetter aktualisieren", key=f"refresh_weather_{cache_key}", use_container_width=True)
+
+    location = None
+    location_error = None
+
+    if refresh_clicked and cached:
+        cached = None
+        get_weather_forecast.clear()
+
+    if cached:
+        location = cached.get("location")
+        weather = cached.get("weather")
+        updated_at = cached.get("updated_at", "")
+        if location:
+            st.caption(f"Gespeicherte Wetterdaten für: {location.get('query', weather_label)}")
+        if updated_at:
+            st.caption(f"Zuletzt aktualisiert: {updated_at}")
+        _render_weather_metrics(weather)
+        return
+
+    location, location_error = geocode_location(*weather_candidates)
+    if not location:
+        st.info(location_error or "Wetterdaten aktuell nicht verfügbar.")
+        return
+
+    weather, weather_error = get_weather_forecast(location["latitude"], location["longitude"])
+
+    if weather:
+        trip["weather_cache"] = {
+            "cache_key": cache_key,
+            "location": location,
+            "weather": weather,
+            "updated_at": datetime.datetime.now().isoformat(timespec="minutes"),
+        }
+        save_db(data)
+        st.caption(f"Wetter gefunden über: {location['query']}")
+        _render_weather_metrics(weather)
+        return
+
+    if weather_error == "RATE_LIMIT":
+        cached = _get_cached_weather_if_matching(trip, details)
+        if cached:
+            updated_at = cached.get("updated_at", "")
+            st.info("Wetterdienst hat das Limit erreicht. Es werden die zuletzt gespeicherten Wetterdaten angezeigt.")
+            if updated_at:
+                st.caption(f"Zuletzt aktualisiert: {updated_at}")
+            _render_weather_metrics(cached.get("weather") or {})
+        else:
+            st.info("Wetterdienst hat das Limit erreicht. Bitte später erneut versuchen.")
+        return
+
+    if cached:
+        updated_at = cached.get("updated_at", "")
+        st.info("Live-Wetter aktuell nicht verfügbar. Es werden die zuletzt gespeicherten Wetterdaten angezeigt.")
+        if updated_at:
+            st.caption(f"Zuletzt aktualisiert: {updated_at}")
+        _render_weather_metrics(cached.get("weather") or {})
+        return
+
+    st.info(weather_error or "Wetterdaten aktuell nicht verfügbar.")
+
+
+def _render_weather_metrics(weather: dict) -> None:
+    current = weather.get("current", {})
+    current_icon = weather_icon_from_code(current.get("weather_code", 0))
+    wc1, wc2, wc3, wc4 = st.columns([1.15, 1, 1, 1])
+    with wc1:
+        st.markdown(f"<div style='font-size:56px; line-height:1;'>{current_icon}</div>", unsafe_allow_html=True)
+    with wc2:
+        st.metric("Aktuell", f"{current.get('temperature_2m', '–')}°C")
+    with wc3:
+        st.metric("Gefühlt", f"{current.get('apparent_temperature', '–')}°C")
+    with wc4:
+        st.metric("Wind", f"{current.get('wind_speed_10m', '–')} km/h")
+
+    daily = weather.get("daily", {}) or {}
+    days = daily.get("time", []) or []
+    weather_codes = daily.get("weather_code", []) or []
+    temp_max = daily.get("temperature_2m_max", []) or []
+    temp_min = daily.get("temperature_2m_min", []) or []
+    rain = daily.get("precipitation_probability_max", []) or []
+
+    if days:
+        st.markdown("#### Vorschau")
+        cols = st.columns(min(3, len(days)))
+        for idx, day in enumerate(days[:3]):
+            icon = weather_icon_from_code(weather_codes[idx]) if idx < len(weather_codes) else "🌡️"
+            max_temp = temp_max[idx] if idx < len(temp_max) else "–"
+            min_temp = temp_min[idx] if idx < len(temp_min) else "–"
+            rain_value = rain[idx] if idx < len(rain) else "–"
+            try:
+                label = datetime.date.fromisoformat(day).strftime("%a, %d.%m.")
+            except Exception:
+                label = str(day)
+            with cols[idx]:
+                st.markdown(
+                    (
+                        "<div class='me-card'>"
+                        f"<strong>{label}</strong><br>"
+                        f"{icon} {max_temp}° / {min_temp}°<br>"
+                        f"<span class='me-soft'>Regen: {rain_value}%</span>"
+                        "</div>"
+                    ),
+                    unsafe_allow_html=True,
+                )
 
 
 def _handle_in_app_notifications(trip_key: str, current_chat_unread: int, current_checklist_unread: int) -> None:
@@ -234,6 +386,7 @@ trip.setdefault("tasks", [])
 trip.setdefault("expenses", [])
 trip.setdefault("images", [])
 trip.setdefault("last_read", {})
+trip.setdefault("weather_cache", {})
 
 if needs_save:
     save_db(data)
@@ -244,33 +397,9 @@ check_unread = get_checklist_unread_count(trip, user)
 
 _handle_in_app_notifications(trip_key, chat_unread, check_unread)
 
-notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True})
-
-with st.expander("📱 Reise & Benachrichtigungen", expanded=False):
-    st.markdown("<div class='me-mobile-note'>Auf dem Handy findest du hier Reiseauswahl, Neu laden und Benachrichtigungen kompakt an einem Ort.</div>", unsafe_allow_html=True)
-    mc1, mc2 = st.columns([2.2, 1])
-    with mc1:
-        selected_trip_mobile = st.selectbox(
-            "Reise wählen",
-            trip_keys,
-            index=trip_keys.index(trip_key),
-            key="selected_trip_mobile",
-        )
-    with mc2:
-        st.write("")
-        if st.button("Neu laden", key="reload_mobile", use_container_width=True):
-            st.rerun()
-
-    notify_settings["chat"] = st.checkbox("Neue Chatnachrichten", value=notify_settings.get("chat", True), key="notify_chat_mobile")
-    notify_settings["checklist"] = st.checkbox("Neue Checklisten-Einträge", value=notify_settings.get("checklist", True), key="notify_checklist_mobile")
-    st.caption(f"Rolle: {role}")
-
-    if selected_trip_mobile != st.session_state.selected_trip:
-        st.session_state.selected_trip = selected_trip_mobile
-        st.rerun()
-
 with st.sidebar:
     st.markdown("#### 🔔 Benachrichtigungen")
+    notify_settings = st.session_state.setdefault("notify_settings", {"chat": True, "checklist": True})
     notify_settings["chat"] = st.checkbox("Neue Chatnachrichten", value=notify_settings.get("chat", True), key="notify_chat")
     notify_settings["checklist"] = st.checkbox("Neue Checklisten-Einträge", value=notify_settings.get("checklist", True), key="notify_checklist")
     st.caption("Hinweise erscheinen in der App, solange sie geöffnet ist.")
@@ -375,30 +504,7 @@ if selected == "overview":
         meet_date_display = meet_date_value
     st.caption(f"Treffpunkt: {meet_date_display} um {meet_time.strftime('%H:%M')} Uhr")
 
-    weather_candidates = [f"{postal_code} {city}".strip(), city, destination]
-    weather_label = city or destination or postal_code
-    if weather_label:
-        st.subheader("🌤️ Wetter")
-        location, location_error = geocode_location(*weather_candidates)
-        if location:
-            weather, weather_error = get_weather_forecast(location["latitude"], location["longitude"])
-            if weather:
-                st.caption(f"Wetter gefunden über: {location['query']}")
-                current = weather.get("current", {})
-                current_icon = weather_icon_from_code(current.get("weather_code", 0))
-                wc1, wc2, wc3, wc4 = st.columns([1.15, 1, 1, 1])
-                with wc1:
-                    st.markdown(f"<div style='font-size:56px; line-height:1;'>{current_icon}</div>", unsafe_allow_html=True)
-                with wc2:
-                    st.metric("Aktuell", f"{current.get('temperature_2m', '–')}°C")
-                with wc3:
-                    st.metric("Gefühlt", f"{current.get('apparent_temperature', '–')}°C")
-                with wc4:
-                    st.metric("Wind", f"{current.get('wind_speed_10m', '–')} km/h")
-            else:
-                st.info(weather_error or "Wetterdaten aktuell nicht verfügbar.")
-        else:
-            st.info(location_error or "Wetterdaten aktuell nicht verfügbar.")
+    _render_weather_block(trip, details, allow_refresh=True)
 
 elif selected == "chat":
     if chat_unread:
