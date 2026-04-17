@@ -152,6 +152,96 @@ def get_weather_forecast(latitude: float, longitude: float):
     except Exception as exc:
         return None, f"Anfragefehler: {type(exc).__name__}: {exc}"
 
+@st.cache_data(show_spinner=False, ttl=10800)
+def get_weather_fallback(latitude: float, longitude: float):
+    headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
+    try:
+        response = requests.get(
+            "https://wttr.in/",
+            params={
+                "format": "j1",
+                "lat": latitude,
+                "lon": longitude,
+            },
+            headers=headers,
+            timeout=12,
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        current_list = payload.get("current_condition") or []
+        weather_days = payload.get("weather") or []
+        current_raw = current_list[0] if current_list else {}
+
+        def _to_int(value, default=0):
+            try:
+                return int(float(value))
+            except Exception:
+                return default
+
+        def _map_desc_to_code(desc: str) -> int:
+            d = (desc or "").lower()
+            if any(x in d for x in ["sun", "klar", "clear"]):
+                return 0
+            if any(x in d for x in ["partly", "teilweise"]):
+                return 2
+            if any(x in d for x in ["cloud", "bewölkt", "overcast"]):
+                return 3
+            if any(x in d for x in ["fog", "mist", "nebel"]):
+                return 45
+            if any(x in d for x in ["snow", "schnee", "sleet"]):
+                return 71
+            if any(x in d for x in ["thunder", "gewitter"]):
+                return 95
+            if any(x in d for x in ["rain", "regen", "drizzle", "shower"]):
+                return 61
+            return 3
+
+        desc_current = ""
+        lang = current_raw.get("lang_de") or current_raw.get("weatherDesc") or []
+        if isinstance(lang, list) and lang:
+            desc_current = str((lang[0] or {}).get("value") or "")
+
+        daily_time = []
+        daily_codes = []
+        daily_max = []
+        daily_min = []
+        daily_rain = []
+        for day in weather_days[:3]:
+            daily_time.append(str(day.get("date") or ""))
+            desc = ""
+            hourly = day.get("hourly") or []
+            if hourly:
+                maybe_desc = hourly[0].get("lang_de") or hourly[0].get("weatherDesc") or []
+                if isinstance(maybe_desc, list) and maybe_desc:
+                    desc = str((maybe_desc[0] or {}).get("value") or "")
+            daily_codes.append(_map_desc_to_code(desc))
+            daily_max.append(_to_int(day.get("maxtempC"), 0))
+            daily_min.append(_to_int(day.get("mintempC"), 0))
+            daily_rain.append(_to_int(day.get("daily_chance_of_rain"), 0))
+
+        normalized = {
+            "current": {
+                "temperature_2m": _to_int(current_raw.get("temp_C"), 0),
+                "apparent_temperature": _to_int(current_raw.get("FeelsLikeC"), 0),
+                "weather_code": _map_desc_to_code(desc_current),
+                "wind_speed_10m": _to_int(current_raw.get("windspeedKmph"), 0),
+            },
+            "daily": {
+                "time": daily_time,
+                "weather_code": daily_codes,
+                "temperature_2m_max": daily_max,
+                "temperature_2m_min": daily_min,
+                "precipitation_probability_max": daily_rain,
+            },
+            "source": "wttr.in",
+        }
+        return normalized, None
+    except requests.RequestException as exc:
+        return None, f"Fallback-Anfragefehler: {type(exc).__name__}: {exc}"
+    except Exception as exc:
+        return None, f"Fallback-Anfragefehler: {type(exc).__name__}: {exc}"
+
 
 def _weather_cache_key(details: dict) -> str:
     return "|".join(
@@ -233,11 +323,26 @@ def _render_weather_block(trip: dict, details: dict, allow_refresh: bool = True)
             "updated_at": datetime.datetime.now().isoformat(timespec="minutes"),
         }
         save_db(data)
-        st.caption(f"Wetter gefunden über: {location['query']}")
+        source_name = weather.get("source", "open-meteo")
+        st.caption(f"Wetter gefunden über: {location['query']} ({source_name})")
         _render_weather_metrics(weather)
         return
 
     if weather_error == "RATE_LIMIT":
+        fallback_weather, fallback_error = get_weather_fallback(location["latitude"], location["longitude"])
+        if fallback_weather:
+            trip["weather_cache"] = {
+                "cache_key": cache_key,
+                "location": location,
+                "weather": fallback_weather,
+                "updated_at": datetime.datetime.now().isoformat(timespec="minutes"),
+            }
+            save_db(data)
+            st.info("Open-Meteo hat das Limit erreicht. Es werden Wetterdaten über den Fallback-Dienst angezeigt.")
+            st.caption(f"Wetter gefunden über: {location['query']} ({fallback_weather.get('source', 'Fallback')})")
+            _render_weather_metrics(fallback_weather)
+            return
+
         fallback_cache = cached_backup or _get_cached_weather_if_matching(trip, details)
         if fallback_cache:
             updated_at = fallback_cache.get("updated_at", "")
@@ -246,7 +351,7 @@ def _render_weather_block(trip: dict, details: dict, allow_refresh: bool = True)
                 st.caption(f"Zuletzt aktualisiert: {updated_at}")
             _render_weather_metrics(fallback_cache.get("weather") or {})
         else:
-            st.info("Wetterdienst hat das Limit erreicht. Bitte später erneut versuchen.")
+            st.info(fallback_error or "Wetterdienst hat das Limit erreicht. Bitte später erneut versuchen.")
         return
 
     fallback_cache = cached_backup or _get_cached_weather_if_matching(trip, details)
