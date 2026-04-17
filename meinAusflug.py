@@ -156,13 +156,12 @@ def get_weather_forecast(latitude: float, longitude: float):
 def get_weather_fallback(latitude: float, longitude: float):
     headers = {"User-Agent": f"{APP_NAME}/1.0 ({APP_URL})"}
     try:
+        # wttr.in funktioniert mit Koordinaten im Pfad deutlich stabiler
+        # als mit lat/lon-Query-Parametern.
+        location_path = f"{latitude:.4f},{longitude:.4f}"
         response = requests.get(
-            "https://wttr.in/",
-            params={
-                "format": "j1",
-                "lat": latitude,
-                "lon": longitude,
-            },
+            f"https://wttr.in/{location_path}",
+            params={"format": "j1"},
             headers=headers,
             timeout=12,
         )
