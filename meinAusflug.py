@@ -193,6 +193,7 @@ def _render_weather_block(trip: dict, details: dict, allow_refresh: bool = True)
     weather_candidates = [f"{postal_code} {city}".strip(), city, destination]
     cache_key = _weather_cache_key(details)
     cached = _get_cached_weather_if_matching(trip, details)
+    cached_backup = cached
 
     refresh_clicked = False
     if allow_refresh:
@@ -203,11 +204,10 @@ def _render_weather_block(trip: dict, details: dict, allow_refresh: bool = True)
     location = None
     location_error = None
 
-    if refresh_clicked and cached:
-        cached = None
+    # Nur den API-Cache leeren, aber vorhandene gespeicherte Wetterdaten als Fallback behalten.
+    if refresh_clicked:
         get_weather_forecast.clear()
-
-    if cached:
+    elif cached:
         location = cached.get("location")
         weather = cached.get("weather")
         updated_at = cached.get("updated_at", "")
@@ -238,23 +238,24 @@ def _render_weather_block(trip: dict, details: dict, allow_refresh: bool = True)
         return
 
     if weather_error == "RATE_LIMIT":
-        cached = _get_cached_weather_if_matching(trip, details)
-        if cached:
-            updated_at = cached.get("updated_at", "")
+        fallback_cache = cached_backup or _get_cached_weather_if_matching(trip, details)
+        if fallback_cache:
+            updated_at = fallback_cache.get("updated_at", "")
             st.info("Wetterdienst hat das Limit erreicht. Es werden die zuletzt gespeicherten Wetterdaten angezeigt.")
             if updated_at:
                 st.caption(f"Zuletzt aktualisiert: {updated_at}")
-            _render_weather_metrics(cached.get("weather") or {})
+            _render_weather_metrics(fallback_cache.get("weather") or {})
         else:
             st.info("Wetterdienst hat das Limit erreicht. Bitte später erneut versuchen.")
         return
 
-    if cached:
-        updated_at = cached.get("updated_at", "")
+    fallback_cache = cached_backup or _get_cached_weather_if_matching(trip, details)
+    if fallback_cache:
+        updated_at = fallback_cache.get("updated_at", "")
         st.info("Live-Wetter aktuell nicht verfügbar. Es werden die zuletzt gespeicherten Wetterdaten angezeigt.")
         if updated_at:
             st.caption(f"Zuletzt aktualisiert: {updated_at}")
-        _render_weather_metrics(cached.get("weather") or {})
+        _render_weather_metrics(fallback_cache.get("weather") or {})
         return
 
     st.info(weather_error or "Wetterdaten aktuell nicht verfügbar.")
