@@ -272,6 +272,28 @@ def apply_theme() -> None:
           margin-bottom: .35rem;
         }
 
+
+        /* Aktiver Reiter klar hervorheben */
+        div[role="radiogroup"] label:has(input:checked),
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] {
+          background: linear-gradient(180deg, rgba(124,156,255,.32), rgba(78,112,214,.38)) !important;
+          border: 1px solid rgba(162, 186, 255, 0.65) !important;
+          box-shadow: 0 8px 22px rgba(124,156,255,.22) !important;
+          transform: translateY(-1px);
+        }
+
+        div[role="radiogroup"] label:has(input:checked) *,
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] * {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+          font-weight: 800 !important;
+        }
+
+        div[role="radiogroup"] label:hover {
+          border-color: rgba(124,156,255,.34) !important;
+        }
+
+
         @media (max-width: 900px) {
           .block-container {
             padding-left: 0.8rem !important;

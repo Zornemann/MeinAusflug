@@ -5,6 +5,7 @@ from typing import Iterable
 import urllib.parse
 
 import requests
+import re
 import streamlit as st
 
 from app.theme import apply_theme
@@ -15,6 +16,7 @@ from core.storage import (
     load_db,
     mark_read,
     normalize_data,
+    reset_db,
     save_db,
 )
 from ui.ui_chat import render_chat
@@ -26,6 +28,34 @@ from ui.ui_photos import render_photos
 st.set_page_config(page_title=APP_NAME, page_icon="🌍", layout="wide")
 apply_theme()
 data = normalize_data(load_db())
+
+
+def _set_query_params(**kwargs) -> None:
+    clean = {}
+    for key, value in kwargs.items():
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            clean[key] = text
+    st.query_params.clear()
+    for key, value in clean.items():
+        st.query_params[key] = value
+
+
+def _restore_state_from_query_params() -> None:
+    qp_user = (st.query_params.get("user", "") or "").strip()
+    qp_trip = (st.query_params.get("trip", "") or "").strip()
+    qp_tab = (st.query_params.get("tab", "") or "").strip()
+    if qp_user and "user" not in st.session_state:
+        st.session_state.user = qp_user
+    if qp_trip:
+        st.session_state.selected_trip = qp_trip
+    if qp_tab:
+        st.session_state.top_nav_key = qp_tab
+
+
+_restore_state_from_query_params()
 
 
 def weather_icon_from_code(code: int) -> str:
@@ -439,19 +469,70 @@ def _handle_in_app_notifications(trip_key: str, current_chat_unread: int, curren
     trip_cache["checklist"] = current_checklist_unread
 
 
+
 if "user" not in st.session_state:
     st.title("🌍 MeinAusflug")
-    preset_name = st.query_params.get("invite_name", "") or ""
+    preset_name = st.query_params.get("user", "") or st.query_params.get("invite_name", "") or ""
     user_name = st.text_input("Dein Name", value=preset_name)
     if st.button("Starten", use_container_width=True) and user_name.strip():
         st.session_state.user = user_name.strip()
+        _set_query_params(user=user_name.strip())
         st.rerun()
     st.stop()
 
 user = st.session_state.user
+_set_query_params(user=user, trip=st.session_state.get('selected_trip', ''), tab=st.session_state.get('top_nav_key', 'overview'))
+
 trips = data.get("trips", {})
 if not trips:
-    st.warning("Noch keine Reisen vorhanden")
+    st.title("🌍 MeinAusflug")
+    st.info("Es sind aktuell keine Reisen vorhanden. Lege jetzt eine neue Reise an.")
+    with st.form("create_first_trip"):
+        trip_name = st.text_input("Name der Reise", placeholder="z. B. Sommerurlaub 2026")
+        destination = st.text_input("Urlaub / Ziel", placeholder="z. B. Gardasee")
+        submitted = st.form_submit_button("Reise anlegen", use_container_width=True)
+        if submitted:
+            if not trip_name.strip():
+                st.warning("Bitte zuerst einen Reisetitel eingeben.")
+            else:
+                trip_id = re.sub(r"[^a-zA-Z0-9_-]+", "-", trip_name.strip().lower()).strip("-") or new_id("trip")
+                base_trip_id = trip_id
+                counter = 1
+                while trip_id in trips:
+                    counter += 1
+                    trip_id = f"{base_trip_id}-{counter}"
+                data.setdefault("trips", {})[trip_id] = {
+                    "name": trip_name.strip(),
+                    "participants": {
+                        user: {
+                            "display_name": user,
+                            "role": "admin",
+                            "joined_at": datetime.datetime.now().isoformat(),
+                        }
+                    },
+                    "details": {
+                        "destination": destination.strip(),
+                        "city": "",
+                        "street": "",
+                        "postal_code": "",
+                        "homepage": "",
+                        "extra": "",
+                        "start_date": str(datetime.date.today()),
+                        "end_date": str(datetime.date.today()),
+                        "meet_date": str(datetime.date.today()),
+                        "meet_time": "18:00",
+                    },
+                    "messages": [],
+                    "tasks": [],
+                    "expenses": [],
+                    "images": [],
+                    "last_read": {},
+                    "weather_cache": {},
+                }
+                save_db(data)
+                st.session_state.selected_trip = trip_id
+                _set_query_params(user=user, trip=trip_id, tab="overview")
+                st.rerun()
     st.stop()
 
 trip_keys = list(trips.keys())
@@ -461,11 +542,18 @@ initial_trip = qp_trip if qp_trip in trips else trip_keys[0]
 if "selected_trip" not in st.session_state or st.session_state.selected_trip not in trips:
     st.session_state.selected_trip = initial_trip
 
+
 with st.sidebar:
     st.markdown(f"### 👋 {user}")
     trip_key = st.selectbox("Reise wählen", trip_keys, key="selected_trip")
+    _set_query_params(user=user, trip=trip_key, tab=st.session_state.get("top_nav_key", "overview"))
     st.caption("Einladungslink und Teilnehmerverwaltung findest du unter „Infos“.")
     if st.button("Neu laden", use_container_width=True):
+        st.rerun()
+    if st.button("Abmelden", use_container_width=True):
+        for key in ["user", "selected_trip", "top_nav_key", "notify_cache"]:
+            st.session_state.pop(key, None)
+        _set_query_params()
         st.rerun()
 
 trip = trips[trip_key]
@@ -496,11 +584,24 @@ trip.setdefault("weather_cache", {})
 if needs_save:
     save_db(data)
 
+
 role = participants.get(user, {}).get("role", "member")
 chat_unread = get_chat_unread_count(trip, user)
 check_unread = get_checklist_unread_count(trip, user)
 
 _handle_in_app_notifications(trip_key, chat_unread, check_unread)
+
+with st.sidebar:
+    if role == "admin":
+        st.markdown("#### 🧹 Daten zurücksetzen")
+        confirm_reset = st.checkbox("Ich möchte alle bisherigen Eintragungen löschen", key="confirm_full_reset")
+        if st.button("Alle Daten zurücksetzen", use_container_width=True, disabled=not confirm_reset):
+            reset_db()
+            st.session_state.selected_trip = ""
+            st.session_state.top_nav_key = "overview"
+            st.session_state.notify_cache = {}
+            _set_query_params(user=user, tab="overview")
+            st.rerun()
 
 with st.sidebar:
     st.markdown("#### 🔔 Benachrichtigungen")
@@ -534,6 +635,7 @@ selected_label = st.radio(
 )
 selected = nav_map[selected_label]
 st.session_state.top_nav_key = selected
+_set_query_params(user=user, trip=trip_key, tab=selected)
 
 summary_cols = st.columns(4)
 summary_cols[0].metric("Teilnehmer", len(participants))

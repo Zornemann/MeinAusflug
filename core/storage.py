@@ -8,6 +8,13 @@ from copy import deepcopy
 
 DB_FILE = os.getenv("DB_FILE", "data/reisen_daten.json")
 
+def reset_db() -> dict:
+    data = {"trips": {}}
+    os.makedirs(os.path.dirname(DB_FILE) or ".", exist_ok=True)
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    return data
+
 
 def load_db() -> dict:
     if not os.path.exists(DB_FILE):
