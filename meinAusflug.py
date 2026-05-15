@@ -623,10 +623,11 @@ nav_items = [
 ]
 
 def _nav_display_label(key: str, label: str) -> str:
+    trip_details = trip.get("details", {}) or {}
     photos_count = len(trip.get("images", []) or [])
     costs_count = len(trip.get("expenses", []) or [])
     info_has_content = any(
-        str(details.get(field, "")).strip()
+        str(trip_details.get(field, "")).strip()
         for field in ["destination", "city", "street", "postal_code", "homepage", "extra"]
     )
     overview_has_content = info_has_content or bool(trip.get("weather_cache"))
