@@ -621,10 +621,39 @@ nav_items = [
     ("photos", "Fotos"),
     ("infos", "Infos"),
 ]
-nav_labels = [label for _, label in nav_items]
-nav_map = {label: key for key, label in nav_items}
+
+def _nav_display_label(key: str, label: str) -> str:
+    photos_count = len(trip.get("images", []) or [])
+    costs_count = len(trip.get("expenses", []) or [])
+    info_has_content = any(
+        str(details.get(field, "")).strip()
+        for field in ["destination", "city", "street", "postal_code", "homepage", "extra"]
+    )
+    overview_has_content = info_has_content or bool(trip.get("weather_cache"))
+
+    if key == "chat" and chat_unread:
+        return f"{label} ({chat_unread})"
+    if key == "checklist" and check_unread:
+        return f"{label} ({check_unread})"
+    if key == "costs" and costs_count:
+        return f"{label} ({costs_count})"
+    if key == "photos" and photos_count:
+        return f"{label} ({photos_count})"
+    if key == "infos" and info_has_content:
+        return f"{label} ★"
+    if key == "overview" and overview_has_content:
+        return f"{label} ★"
+    return label
+
+display_to_key = {}
+nav_labels = []
+for key, label in nav_items:
+    display = _nav_display_label(key, label)
+    display_to_key[display] = key
+    nav_labels.append(display)
+
 current_key = st.session_state.get("top_nav_key", "overview")
-current_label = next((label for key, label in nav_items if key == current_key), "Übersicht")
+current_label = next((display for display, key in display_to_key.items() if key == current_key), nav_labels[0])
 
 selected_label = st.radio(
     "Bereich",
@@ -633,15 +662,10 @@ selected_label = st.radio(
     label_visibility="collapsed",
     index=nav_labels.index(current_label) if current_label in nav_labels else 0,
 )
-selected = nav_map[selected_label]
+selected = display_to_key[selected_label]
 st.session_state.top_nav_key = selected
 _set_query_params(user=user, trip=trip_key, tab=selected)
-
-summary_cols = st.columns(4)
-summary_cols[0].metric("Teilnehmer", len(participants))
-summary_cols[1].metric("Nachrichten", len(trip.get("messages", [])), delta=f"{chat_unread} neu" if chat_unread else None)
-summary_cols[2].metric("Checkliste", len(trip.get("tasks", [])), delta=f"{check_unread} neu" if check_unread else None)
-summary_cols[3].metric("Kosten", f"{sum(float(e.get('amount', 0) or 0) for e in trip.get('expenses', [])):.2f} €")
+st.markdown("<div class='me-mobile-note'>Kompakte mobile Ansicht mit Schnellzugriff auf alle Bereiche.</div>", unsafe_allow_html=True)
 
 details = trip.setdefault("details", {})
 

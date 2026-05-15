@@ -294,16 +294,23 @@ def apply_theme() -> None:
         }
 
 
+
+        /* nav-badge-friendly */
+        div[role="radiogroup"] label {
+          letter-spacing: -0.01em;
+        }
+
         @media (max-width: 900px) {
           .block-container {
-            padding-left: 0.8rem !important;
-            padding-right: 0.8rem !important;
-            padding-top: 0.35rem !important;
+            padding-left: 0.65rem !important;
+            padding-right: 0.65rem !important;
+            padding-top: 0.18rem !important;
+            padding-bottom: 1rem !important;
           }
 
-          h1 { font-size: 2.2rem !important; }
-          h2 { font-size: 1.6rem !important; }
-          h3 { font-size: 1.3rem !important; }
+          h1 { font-size: 1.85rem !important; margin-bottom: 0.25rem !important; }
+          h2 { font-size: 1.35rem !important; margin-bottom: 0.18rem !important; }
+          h3 { font-size: 1.12rem !important; margin-bottom: 0.15rem !important; }
 
           section[data-testid="stSidebar"] {
             display: none !important;
@@ -312,7 +319,7 @@ def apply_theme() -> None:
           div[role="radiogroup"] {
             display: grid !important;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.45rem;
+            gap: 0.35rem;
             padding: 0.45rem;
             border-radius: 18px;
           }
@@ -333,6 +340,8 @@ def apply_theme() -> None:
             width: 100% !important;
           }
 
+          div[data-testid="stMetric"] { display: none !important; }
+
           div[data-testid="stMetric"] {
             padding: 0.8rem 0.9rem;
             border-radius: 18px;
@@ -343,7 +352,7 @@ def apply_theme() -> None:
           .stLinkButton > a,
           div[data-testid="stForm"] button {
             width: 100%;
-            min-height: 3rem;
+            min-height: 2.7rem;
           }
 
           textarea, input, select {
@@ -356,6 +365,27 @@ def apply_theme() -> None:
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
+        
+        @media (max-width: 900px) {
+          div[data-testid="stVerticalBlock"] > div {
+            gap: 0.35rem !important;
+          }
+
+          div[data-testid="stForm"] {
+            margin-bottom: 0.4rem !important;
+          }
+
+          .me-mobile-note {
+            font-size: .78rem;
+            margin-top: 0.05rem;
+            margin-bottom: 0.25rem;
+          }
+
+          p, label, span, div {
+            line-height: 1.22;
+          }
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
